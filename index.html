@@ -734,7 +734,8 @@ async function submitForm(){
             const buf=await file.arrayBuffer();
             const res=await fetch(GRAPH+'/drives/'+drive.id+'/root:/MC_Requests_AttachedFiles/'+reqId+'/'+encodeURIComponent(file.name)+':/content',
               {method:'PUT',headers:{Authorization:'Bearer '+t,'Content-Type':file.type||'application/octet-stream'},body:buf});
-            if(res.ok){const u=await res.json();links.push(file.name+'||'+drive.id+'||'+u.id);}
+            if(res.ok){const u=await res.json();const safeKey = btoa(unescape(encodeURIComponent(drive.id+'###'+u.id)));
+            links.push(file.name+'||ENC||'+safeKey);}
           }catch(fe){console.error(fe);}
         }
         if(links.length)await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
@@ -914,14 +915,37 @@ async function showDetail(id){
 
     let filesHtml='<div style="font-size:13px;color:#605e5c">첨부파일 없음</div>';
     if(f.AttachedFiles){
-      filesHtml=f.AttachedFiles.split(';').map(entry=>{
-        const parts=entry.split('||'),name=parts[0]||entry;
-        if(parts.length===3){
-          const driveId=decodeURIComponent(parts[1]),itemId=decodeURIComponent(parts[2]);
+      // SharePoint 여러줄텍스트 → HTML 태그 제거
+      let cleanFiles = f.AttachedFiles;
+      cleanFiles = cleanFiles.replace(/<[^>]*>/g, '');
+      cleanFiles = cleanFiles.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').trim();
+      const fileEntries = cleanFiles.split(/[;
+]+/).filter(e=>e.trim()&&e.includes('||'));
+      filesHtml = fileEntries.map(entry=>{
+        if(!entry.trim()) return '';
+        const firstSep = entry.indexOf('||');
+        if(firstSep < 0) return '';
+        const name = entry.substring(0, firstSep);
+        const rest = entry.substring(firstSep + 2);
+        // ENC 형식
+        if(rest.startsWith('ENC||')){
+          try{
+            const decoded = decodeURIComponent(escape(atob(rest.substring(5))));
+            const si = decoded.indexOf('###');
+            if(si>=0){
+              const driveId=decoded.substring(0,si), itemId=decoded.substring(si+3);
+              return`<div style="padding:4px 0;font-size:13px">📎 <a href="#" class="file-dl-link" data-drive="${encodeURIComponent(driveId)}" data-id="${encodeURIComponent(itemId)}" data-name="${encodeURIComponent(name)}" style="color:#0078d4;cursor:pointer">${name}</a></div>`;
+            }
+          }catch(ex){}
+        }
+        // 구 형식 (parts 기반)
+        const parts = entry.split('||');
+        if(parts.length>=3){
+          const driveId=parts[1], itemId=parts.slice(2).join('||');
           return`<div style="padding:4px 0;font-size:13px">📎 <a href="#" class="file-dl-link" data-drive="${encodeURIComponent(driveId)}" data-id="${encodeURIComponent(itemId)}" data-name="${encodeURIComponent(name)}" style="color:#0078d4;cursor:pointer">${name}</a></div>`;
         }
-        return`<div style="padding:4px 0;font-size:13px;color:#605e5c">📎 ${name}</div>`;
-      }).join('');
+        return`<div style="padding:4px 0;font-size:13px;color:#a19f9d">📎 ${name} <span style="font-size:.65rem">(링크 없음)</span></div>`;
+      }).filter(Boolean).join('');
     }
 
     const apprHtml2=sec('결재 이력')+
@@ -954,9 +978,13 @@ async function showDetail(id){
           const driveId=decodeURIComponent(a.dataset.drive),itemId=decodeURIComponent(a.dataset.id),name=decodeURIComponent(a.dataset.name);
           const res=await fetch(GRAPH+'/drives/'+driveId+'/items/'+itemId+'?select=id,name,%40microsoft.graph.downloadUrl,webUrl',{headers:{Authorization:'Bearer '+t}});
           const data=await res.json();
-          const dlUrl=data['@microsoft.graph.downloadUrl']||data.webUrl;
-          if(dlUrl){const anchor=document.createElement('a');anchor.href=dlUrl;anchor.download=name;document.body.appendChild(anchor);anchor.click();document.body.removeChild(anchor);}
-          else alert('다운로드 URL을 가져올 수 없습니다.');
+          const dlUrl=data['@microsoft.graph.downloadUrl'];
+          if(dlUrl){
+            const anchor=document.createElement('a');anchor.href=dlUrl;anchor.download=name;anchor.style.display='none';
+            document.body.appendChild(anchor);anchor.click();document.body.removeChild(anchor);
+          } else if(data.webUrl){
+            window.open(data.webUrl,'_blank');
+          } else { alert('다운로드 URL을 가져올 수 없습니다.'); }
         }catch(e){alert('다운로드 오류: '+e.message);}
       });
     });
