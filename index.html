@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>STK Mobility Car Application</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:#fff;border-radius:8px;padding:40px 48px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,.1);max-width:380px;width:100%}
+.login-logo{font-size:2.5rem;margin-bottom:12px}
+.login-title{font-size:1.2rem;font-weight:700;color:#323130;margin-bottom:6px}
+.login-sub{font-size:.8rem;color:#605e5c;margin-bottom:28px}
+.btn-login{background:#0078d4;color:#fff;border:none;border-radius:4px;padding:10px 28px;font-size:.95rem;cursor:pointer;width:100%}
+.btn-login:hover{background:#106ebe}
+.btn-login:disabled{background:#c8c6c4;cursor:not-allowed}
+#login-err{color:#a4262c;font-size:.78rem;margin-top:10px;display:none}
+#app{display:none;max-width:960px;margin:0 auto;padding:24px 16px 48px}
+.header{background:#fff;border-radius:8px;padding:18px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;border:1px solid #edebe9;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.header .title{font-size:1.1rem;font-weight:700;color:#323130}
+.header .sub{font-size:.72rem;color:#605e5c;margin-top:3px}
+.user-info{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.user-info>div:first-child{display:flex;align-items:center;gap:10px;font-size:.8rem;color:#605e5c}
+#btn-logout{background:#fff;border:1px solid #d2d0ce;border-radius:4px;padding:4px 12px;font-size:.78rem;cursor:pointer}
+#btn-logout:hover{background:#f3f2f1}
+/* 통합결재함 버튼 */
+.unified-btn-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.unified-appr-btn{position:relative;background:#fff;border:1.5px solid #d2d0ce;border-radius:10px;width:48px;height:48px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:all .18s;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.unified-appr-btn:hover{border-color:#0078d4;background:#f0f6ff;transform:translateY(-1px)}
+.unified-appr-btn .unif-badge{display:none;position:absolute;top:-5px;right:-5px;background:#a4262c;color:#fff;border-radius:10px;padding:1px 6px;font-size:11px;font-weight:700;min-width:18px;text-align:center;border:2px solid #fff}
+.unif-btn-label{font-size:10px;color:#605e5c;text-align:center}
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:16px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.tab-btn{padding:12px 20px;font-size:.85rem;border:none;background:transparent;cursor:pointer;color:#605e5c;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:#0078d4;border-bottom-color:#0078d4;font-weight:600}
+.tab-btn:hover:not(.active){background:#f3f2f1}
+.badge{display:none;background:#a4262c;color:#fff;border-radius:10px;padding:1px 6px;font-size:.65rem;margin-left:5px;font-weight:700}
+/* Card */
+.card{background:#fff;border-radius:8px;padding:24px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card-title{font-size:.9rem;font-weight:700;color:#323130;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid #edebe9}
+.section-title{font-size:.82rem;font-weight:600;color:#0078d4;margin:18px 0 12px;padding:5px 10px;background:#f0f6ff;border-radius:4px;border-left:3px solid #0078d4}
+/* Form */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.75rem;font-weight:600;color:#323130}
+.req-mark{color:#a4262c;margin-left:2px}
+.form-group input,.form-group select,.form-group textarea{border:1px solid #d2d0ce;border-radius:4px;padding:7px 10px;font-size:.82rem;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#0078d4}
+.form-group input[readonly]{background:#f3f2f1;color:#605e5c}
+.hint{font-size:.7rem;color:#605e5c;font-weight:400}
+/* 기간 선택 */
+.period-row{display:grid;grid-template-columns:1fr auto auto 1fr auto auto;gap:8px;align-items:center;margin-bottom:12px}
+@media(max-width:600px){.period-row{grid-template-columns:1fr 1fr}}
+/* 운전자 정보 */
+.driver-opts{display:flex;gap:16px;margin-bottom:10px}
+.driver-opts label{display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer}
+/* Approver */
+.appr-block{background:#f9f9f9;border:1px solid #edebe9;border-radius:6px;padding:12px;margin-bottom:8px}
+.appr-block.appr-fixed{background:#f0f6ff;border:1px solid #c7e0f4}
+.appr-title{font-size:.78rem;font-weight:600;color:#323130;margin-bottom:8px}
+.appr-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.appr-grid select{border:1px solid #d2d0ce;border-radius:4px;padding:5px 8px;font-size:.75rem;font-family:inherit;background:#fff}
+.appr-info{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.appr-info input{border:1px solid #d2d0ce;border-radius:4px;padding:5px 8px;font-size:.75rem;font-family:inherit;background:#f3f2f1;color:#605e5c}
+/* File */
+.file-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f2f1}
+.file-row:last-child{border-bottom:none}
+.file-row input[type="file"]{flex:1;font-size:.75rem;border:1px solid #d2d0ce;border-radius:4px;padding:4px 8px;background:#fff}
+.btn-file-reset{background:#fff;border:1px solid #d2d0ce;border-radius:4px;padding:3px 10px;font-size:.73rem;color:#a4262c;cursor:pointer}
+/* Btn Row */
+.btn-row{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.btn-primary{background:#0078d4;color:#fff;border:none;border-radius:4px;padding:8px 24px;font-size:.85rem;cursor:pointer;font-family:inherit}
+.btn-primary:hover{background:#106ebe}
+.btn-secondary{background:#fff;border:1px solid #d2d0ce;border-radius:4px;padding:8px 24px;font-size:.85rem;cursor:pointer;font-family:inherit}
+.btn-secondary:hover{background:#f3f2f1}
+/* List */
+.list-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.list-table th{padding:9px 12px;text-align:left;background:#f3f2f1;border-bottom:1px solid #edebe9;font-weight:600;color:#323130;font-size:.75rem}
+.list-table td{padding:9px 12px;border-bottom:1px solid #edebe9;color:#323130}
+.list-table tr:hover td{background:#f9f8f7;cursor:pointer}
+.badge-type{background:#e1f0ff;color:#0078d4;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-대기{background:#fff4ce;color:#7d5700;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-승인완료{background:#dff6dd;color:#107c10;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-반려{background:#fde7e9;color:#a4262c;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+/* 결재함 버튼 */
+.btn-approve{background:#107c10;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-approve:hover{background:#0e6b0e}
+.btn-reject{background:#a4262c;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-reject:hover{background:#8f1f24}
+/* pagination */
+#list-pagination,#appr-pagination,#admin-pagination{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;flex-wrap:wrap}
+/* Modal */
+#detail-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+#detail-modal.open{display:flex}
+.modal-box{background:#fff;border-radius:8px;padding:28px 32px;max-width:640px;width:95%;max-height:88vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#605e5c}
+.modal-title{font-size:1rem;font-weight:700;color:#323130;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #edebe9}
+.modal-row{display:flex;padding:6px 0;border-bottom:1px solid #f3f2f1;font-size:.8rem}
+.modal-row:last-child{border-bottom:none}
+.modal-label{color:#605e5c;width:160px;flex-shrink:0;font-size:.75rem}
+.modal-value{color:#323130;font-weight:500;flex:1}
+/* 통합결재함 모달 */
+#unified-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;align-items:flex-start;justify-content:center;padding-top:60px}
+#unified-modal.open{display:flex}
+.unified-box{background:#fff;border-radius:10px;width:720px;max-width:96vw;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.unified-header{padding:18px 22px 14px;border-bottom:1px solid #edebe9;display:flex;justify-content:space-between;align-items:center}
+.unified-title{font-size:1rem;font-weight:700;color:#323130}
+.unified-sub{font-size:.72rem;color:#605e5c;margin-top:2px}
+.unified-close{background:none;border:1px solid #d2d0ce;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:.9rem;color:#605e5c}
+.unified-body{overflow-y:auto;padding:16px 22px;flex:1}
+.unified-sys-section{margin-bottom:16px}
+.unified-sys-title{font-size:.75rem;font-weight:700;color:#0078d4;background:#f0f6ff;border-left:3px solid #0078d4;padding:5px 10px;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.unified-sys-title a{font-size:.68rem;color:#0078d4;text-decoration:none}
+.unified-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.unified-table th{padding:7px 10px;text-align:left;background:#f3f2f1;border-bottom:1px solid #edebe9;font-weight:600;color:#323130;font-size:.72rem}
+.unified-table td{padding:7px 10px;border-bottom:1px solid #f3f2f1;color:#323130}
+.unified-table tr:hover td{background:#faf9f8;cursor:pointer}
+.unified-empty{text-align:center;padding:20px;color:#a19f9d;font-size:.78rem}
+.unified-table td:last-child,.unified-table td:nth-last-child(2){white-space:nowrap;text-align:center;width:70px}
+.unified-table .btn-approve,.unified-table .btn-reject{width:60px;text-align:center;padding:4px 0}
+.sys-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:700;margin-right:4px}
+.sys-IT{background:#e8f4ff;color:#0078d4}.sys-SCC{background:#f0fff4;color:#107c10}
+.sys-GW{background:#fff8e1;color:#b45309}.sys-BP{background:#f3e8ff;color:#7b2d8b}
+.sys-FA{background:#fce8ff;color:#881798}.sys-MC{background:#e8fff0;color:#006b3e}
+/* uni-detail */
+#uni-detail-box{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;align-items:center;justify-content:center}
+#uni-detail-inner{background:#fff;border-radius:10px;padding:22px;width:480px;max-width:94vw;max-height:82vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+/* confirm */
+#confirm-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;align-items:center;justify-content:center}
+#confirm-modal.open{display:flex}
+.confirm-box{background:#fff;border-radius:10px;padding:28px 28px 20px;max-width:420px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.2)}
+/* loading */
+#loading{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);align-items:center;justify-content:center;z-index:999}
+#loading.show{display:flex}
+.loading-box{background:#fff;border-radius:6px;padding:24px 36px;font-size:.9rem;color:#323130;display:flex;flex-direction:column;align-items:center;gap:14px}
+.spinner{width:30px;height:30px;border:3px solid #edebe9;border-top:3px solid #0078d4;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* dyn-loading */
+#dyn-loading{display:none;position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#dyn-loading.show{display:flex}
+.dyn-spinner{width:40px;height:40px;border:3px solid #edebe9;border-top:3px solid #0078d4;border-radius:50%;animation:dynSpin .8s linear infinite}
+@keyframes dynSpin{to{transform:rotate(360deg)}}
+.dyn-msg{font-size:.88rem;color:#323130;font-weight:500;display:flex;align-items:center;gap:6px}
+.dyn-dots{display:inline-flex;gap:3px}
+.dyn-dots span{width:4px;height:4px;background:#0078d4;border-radius:50%;animation:dotPulse 1.2s infinite}
+.dyn-dots span:nth-child(2){animation-delay:.2s}
+.dyn-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dotPulse{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}
+.dyn-refresh{display:none;background:#0078d4;color:#fff;border:none;border-radius:4px;padding:8px 20px;font-size:.82rem;cursor:pointer;font-family:inherit;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🚗</div>
+    <div class="login-title">STK Mobility Car</div>
+    <div class="login-sub">Mobility Car 신청 시스템</div>
+    <button class="btn-login" id="btn-login" disabled>로딩 중...</button>
+    <div id="login-err"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="header">
+    <div>
+      <div class="title">🚗 STK Mobility Car Application</div>
+      <div class="sub">문의 Email: stk_it@hyosung.com</div>
+    </div>
+    <div class="user-info">
+      <div>
+        <span id="user-name"></span>
+        <button id="btn-logout" onclick="signOut()">로그아웃</button>
+      </div>
+      <div class="unified-btn-wrap">
+        <button class="unified-appr-btn" onclick="openUnifiedAppr()" title="나의 통합 결재함">
+          <span>📬</span>
+          <span class="unif-badge" id="unif-badge"></span>
+        </button>
+        <span class="unif-btn-label">통합 결재함</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-form-btn" onclick="switchTab('form')">신청서 작성</button>
+    <button class="tab-btn" id="tab-list-btn" onclick="switchTab('list')">내 신청 목록</button>
+    <button class="tab-btn" id="tab-appr-btn" onclick="switchTab('appr')">결재함 <span class="badge" id="appr-badge"></span></button>
+    <button class="tab-btn" id="tab-admin-btn" style="display:none" onclick="switchTab('admin')">관리자</button>
+  </div>
+
+  <!-- 신청서 작성 -->
+  <div id="tab-form">
+    <div class="card">
+      <div class="card-title">Mobility Car 신청서</div>
+
+      <div class="section-title">1. 기본 정보</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Company <span class="req-mark">*</span></label>
+          <select id="f-company">
+            <option value="STK">STK</option>
+            <option value="STK Van">STK Van</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department <span class="req-mark">*</span></label>
+          <select id="f-dept">
+            <option value="">-- Choice Department --</option>
+            <option>Sales</option>
+            <option>Marketing/CEO office</option>
+            <option>F&amp;C</option>
+            <option>CSP</option>
+            <option>PTB</option>
+            <option>PMM</option>
+            <option>Unimog</option>
+            <option>ND</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Car Model</label>
+          <input type="text" id="f-carmodel" placeholder="차량 모델">
+        </div>
+        <div class="form-group">
+          <label>Car Number</label>
+          <input type="text" id="f-carnum" placeholder="차량 번호">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Purpose <span class="req-mark">*</span></label>
+        <textarea id="f-purpose" rows="3" placeholder="사용 목적을 입력해주세요" maxlength="3950" oninput="document.getElementById('purpose-count').textContent=this.value.length"></textarea>
+        <div style="text-align:right;font-size:.7rem;color:#605e5c"><span id="purpose-count">0</span> / 3950 bytes</div>
+      </div>
+
+      <div class="section-title">2. 사용 기간</div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:8px;align-items:center;margin-bottom:8px">
+        <span style="font-size:.78rem;font-weight:600;color:#323130;white-space:nowrap">PICKUP DATE</span>
+        <input type="date" id="f-pickup-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
+        <span style="font-size:.78rem;color:#605e5c">TIME</span>
+        <select id="f-pickup-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"></select>
+        <select id="f-pickup-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:8px;align-items:center;margin-bottom:12px">
+        <span style="font-size:.78rem;font-weight:600;color:#323130;white-space:nowrap">RETURN DATE</span>
+        <input type="date" id="f-return-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
+        <span style="font-size:.78rem;color:#605e5c">TIME</span>
+        <select id="f-return-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"></select>
+        <select id="f-return-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+      </div>
+
+      <div class="section-title">3. Driver's Information</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px;align-items:center">
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer">
+          <input type="checkbox" id="same-as-requester" onchange="fillRequesterAsDriver()"> Same as requester
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer">
+          <input type="checkbox" id="other-employee" onchange="toggleOtherEmployee()"> Other STK Employee
+        </label>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name <span class="req-mark">*</span></label>
+          <input type="text" id="f-driver-name" placeholder="운전자 이름">
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" id="f-driver-dept" placeholder="운전자 부서">
+        </div>
+      </div>
+      <!-- 다른 직원 검색 (숨김) -->
+      <div id="other-emp-search" style="display:none;margin-bottom:12px">
+        <div class="appr-grid">
+          <select id="drv-dept-sel" onchange="drvDeptChange()"><option value="">부서</option></select>
+          <select id="drv-team-sel" onchange="drvTeamChange()" disabled><option value="">팀</option></select>
+          <select id="drv-person-sel" onchange="drvPersonChange()" disabled><option value="">직원 선택</option></select>
+        </div>
+      </div>
+
+      <div class="section-title">4. 첨부파일</div>
+      <div style="margin-bottom:6px;font-size:.75rem;color:#605e5c">※ 파일 1개당 최대 20MB / 전체 합계 최대 20MB</div>
+      <div class="file-row"><input type="file" id="att1" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('att1')">Reset</button></div>
+      <div class="file-row"><input type="file" id="att2" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('att2')">Reset</button></div>
+      <div class="file-row"><input type="file" id="att3" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('att3')">Reset</button></div>
+      <div class="file-row"><input type="file" id="att4" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('att4')">Reset</button></div>
+      <div class="file-row"><input type="file" id="att5" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('att5')">Reset</button></div>
+
+      <div class="section-title">5. 결재자 지정 (Approvers)</div>
+      <div style="background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.75rem">
+        <div style="font-weight:600;color:#0078d4;margin-bottom:4px">결재 라인</div>
+        <div>1차 Line Manager (선택) → 2차 CFO - Martin Schindele <span style="color:#0078d4">(고정)</span> → 3차 Hye-jin Yoon <span style="color:#0078d4">(고정)</span></div>
+      </div>
+
+      <!-- 1차: Line Manager -->
+      <div class="appr-block">
+        <div class="appr-title">1차 결재자 <span class="req-mark">*</span> <span class="hint">— Line Manager (팀장)</span></div>
+        <div class="appr-grid">
+          <select id="a1-dept" onchange="onDeptChange(1)"><option value="">부서</option></select>
+          <select id="a1-team" onchange="onTeamChange(1)" disabled><option value="">팀</option></select>
+          <select id="a1-person" onchange="onPersonChange(1)" disabled><option value="">직원 선택</option></select>
+        </div>
+        <div class="appr-info">
+          <input type="text" id="a1-name" readonly placeholder="이름">
+          <input type="email" id="a1-email" readonly placeholder="이메일">
+        </div>
+      </div>
+
+      <!-- 2차: CFO (고정) -->
+      <div class="appr-block appr-fixed">
+        <div class="appr-title">2차 결재자 <span class="hint">— CFO (자동 지정)</span></div>
+        <div class="appr-info">
+          <input type="text" value="Martin Schindele" readonly>
+          <input type="email" value="martin.s.schindele@hyosung.com" readonly>
+        </div>
+      </div>
+
+      <!-- 3차: Hye-jin Yoon (고정) -->
+      <div class="appr-block appr-fixed">
+        <div class="appr-title">3차 결재자 <span class="hint">— 관리자 (자동 지정)</span></div>
+        <div class="appr-info">
+          <input type="text" value="Hye-jin Yoon" readonly>
+          <input type="email" value="hye-jin.yun@hyosung.com" readonly>
+        </div>
+      </div>
+
+      <div style="background:#f9f8f7;border:1px solid #edebe9;border-radius:6px;padding:12px;margin-top:16px;font-size:.75rem;color:#605e5c;line-height:1.8">
+        <b style="color:#323130">Remark</b><br>
+        All responsibilities on traffic violations and damages occurred for the specific period of time are solely borne by the Applicant of this form.<br><br>
+        1. The mobility vehicle users must pick up and return the car keys in the vehicle keybox with information via email.<br>
+        2. The mobility car user must have a valid driver's license.<br>
+        3. The mobility car user must share the mileage and vehicle location by e-mail.<br>
+        4. The mobility car user must understand and provide consent to the collection of personal location information for provision of the Services utilizing thereof.<br><br>
+        <b>Lastly, enjoy your company car and stay safe on board! Thank you.</b>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="resetForm()">초기화</button>
+        <button class="btn-primary" onclick="submitForm()">제출</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내 신청 목록 -->
+  <div id="tab-list" style="display:none">
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="list-table">
+        <thead><tr><th>번호</th><th>Company</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th></tr></thead>
+        <tbody id="list-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="list-pagination"></div>
+  </div>
+
+  <!-- 결재함 -->
+  <div id="tab-appr" style="display:none">
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="list-table">
+        <thead><tr><th>신청번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+        <tbody id="appr-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="appr-pagination"></div>
+  </div>
+
+  <!-- 관리자 -->
+  <div id="tab-admin" style="display:none">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <select id="admin-status" onchange="loadAdminList()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
+        <option value="">전체 상태</option><option>대기</option><option>승인완료</option><option>반려</option>
+      </select>
+      <select id="admin-dept" onchange="loadAdminList()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
+        <option value="">전체 부서</option>
+        <option>Sales</option><option>Marketing/CEO office</option><option>F&C</option>
+        <option>CSP</option><option>PTB</option><option>PMM</option><option>Unimog</option><option>ND</option>
+      </select>
+      <span style="font-size:.8rem;color:#605e5c;align-self:center" id="admin-count"></span>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="list-table">
+        <thead><tr><th>번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>운전자</th><th>상태</th><th>신청일</th></tr></thead>
+        <tbody id="admin-body"></tbody>
+      </table>
+    </div>
+    <div id="admin-pagination"></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">신청 상세 내용</div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- 통합결재함 -->
+<div id="uni-detail-box" onclick="if(event.target===this)closeUniDetail()">
+  <div id="uni-detail-inner"></div>
+</div>
+<div id="unified-modal" onclick="if(event.target===this)closeUnifiedAppr()">
+  <div class="unified-box">
+    <div class="unified-header">
+      <div>
+        <div class="unified-title">📬 나의 통합 결재함</div>
+        <div class="unified-sub">STK 결재 시스템 전체 대기 항목</div>
+      </div>
+      <button class="unified-close" onclick="closeUnifiedAppr()">✕</button>
+    </div>
+    <div class="unified-body" id="unified-body"></div>
+  </div>
+</div>
+
+<!-- 결재 확인 팝업 -->
+<div id="confirm-modal" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-box">
+    <div id="confirm-title" style="font-size:1rem;font-weight:700;color:#323130;margin-bottom:6px"></div>
+    <div id="confirm-sub" style="font-size:.78rem;color:#605e5c;margin-bottom:14px"></div>
+    <textarea id="confirm-comment" rows="3" style="width:100%;border:1px solid #d2d0ce;border-radius:4px;padding:8px 10px;font-size:.82rem;font-family:inherit;resize:vertical;margin-bottom:14px"></textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="closeConfirm()" style="background:#fff;border:1px solid #d2d0ce;border-radius:4px;padding:7px 20px;font-size:.85rem;cursor:pointer;font-family:inherit">취소</button>
+      <button id="confirm-ok-btn" style="border:none;border-radius:4px;padding:7px 20px;font-size:.85rem;cursor:pointer;font-weight:600;font-family:inherit"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Dynamic Loading -->
+<div id="dyn-loading">
+  <div class="dyn-spinner"></div>
+  <div class="dyn-msg"><span id="dyn-msg-text">데이터 불러오는 중</span><div class="dyn-dots"><span></span><span></span><span></span></div></div>
+  <div class="dyn-sub" id="dyn-sub-text"></div>
+  <button class="dyn-refresh" id="dyn-refresh-btn" onclick="location.reload()">🔄 새로고침</button>
+</div>
+<div id="loading"><div class="loading-box"><div class="spinner"></div><span>처리 중입니다...</span></div></div>
+
+<script>
+const CLIENT_ID  = '432976c2-b43a-492e-8213-ece505fa1f51';
+const TENANT_ID  = '19cab1f5-21f4-44df-8ac6-96d6ca595203';
+const SITE_PATH  = 'startruckkorea.sharepoint.com:/sites/STK-DB:';
+const GRAPH      = 'https://graph.microsoft.com/v1.0';
+const SCOPES     = ['User.Read','Sites.ReadWrite.All','Files.ReadWrite.All'];
+const LIST_REQ   = 'MC_Requests';
+const LIST_APR   = 'MC_Approvals';
+const ADMIN_EMAILS = ['hye-jin.yun@hyosung.com','martin.s.schindele@hyosung.com'];
+
+const A2 = { name:'Martin Schindele', email:'martin.s.schindele@hyosung.com', role:'2차결재자(CFO)', order:2 };
+const A3 = { name:'Hye-jin Yoon',     email:'hye-jin.yun@hyosung.com',        role:'3차결재자(관리자)', order:3 };
+
+let msalApp=null, user=null, siteId=null, employeeData=[];
+
+// ── MSAL ──
+window.addEventListener('load', async () => {
+  const btn = document.getElementById('btn-login');
+  try {
+    const inst = await msal.PublicClientApplication.createPublicClientApplication({
+      auth: { clientId:CLIENT_ID, authority:'https://login.microsoftonline.com/'+TENANT_ID, redirectUri:window.location.origin+window.location.pathname },
+      cache: { cacheLocation:'localStorage' }
+    });
+    msalApp = inst;
+    const resp = await msalApp.handleRedirectPromise();
+    if(resp){ msalApp.setActiveAccount(resp.account); await boot(resp.account); return; }
+    const accounts = msalApp.getAllAccounts();
+    if(accounts.length){ msalApp.setActiveAccount(accounts[0]); await boot(accounts[0]); return; }
+    btn.disabled=false; btn.textContent='Microsoft 계정으로 로그인';
+  } catch(e){
+    btn.disabled=false; btn.textContent='Microsoft 계정으로 로그인';
+    document.getElementById('login-err').textContent='초기화 오류: '+e.message;
+    document.getElementById('login-err').style.display='block';
+  }
+});
+
+async function signIn(){
+  try{
+    if(window!==window.top){window.open(window.location.href,'_blank');return;}
+    const r=await msalApp.loginPopup({scopes:SCOPES});
+    msalApp.setActiveAccount(r.account);
+    await boot(r.account);
+  }catch(e){ document.getElementById('login-err').textContent=e.message; document.getElementById('login-err').style.display='block'; }
+}
+document.getElementById('btn-login').onclick = signIn;
+function signOut(){ msalApp.logoutRedirect(); }
+
+async function token(){
+  try{ return (await msalApp.acquireTokenSilent({scopes:SCOPES,account:msalApp.getActiveAccount()})).accessToken; }
+  catch(e){
+    if(e.name==='InteractionRequiredAuthError'||(e.errorCode&&e.errorCode.includes('interaction_required'))){
+      const r=await msalApp.acquireTokenPopup({scopes:SCOPES}); msalApp.setActiveAccount(r.account); return r.accessToken;
+    }
+    throw e;
+  }
+}
+async function api(path,method='GET',body=null){
+  const t=await token();
+  const opts={method,headers:{Authorization:'Bearer '+t,'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const res=await fetch(GRAPH+path,opts);
+  if(!res.ok)throw new Error((await res.json())?.error?.message||res.status);
+  return res.status===204?null:res.json();
+}
+function loading(on){ document.getElementById('loading').className=on?'show':''; }
+function fmtDate(s){ if(!s)return''; const d=new Date(s); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+// ── Boot ──
+async function boot(account){
+  user=account;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-name').textContent=account.name||account.username;
+  try{
+    const me=await api('/me?$select=mail,userPrincipalName');
+    user.email=(me.mail||me.userPrincipalName||account.username).toLowerCase();
+  }catch(e){ user.email=(account.username||'').toLowerCase(); }
+
+  // 시간 초기화
+  const h=['1','2','3','4','5','6','7','8','9','10','11','12'];
+  ['f-pickup-h','f-return-h'].forEach(id=>{
+    const sel=document.getElementById(id);
+    h.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v==='6')o.selected=true;sel.appendChild(o);});
+  });
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('f-pickup-date').value=today;
+  document.getElementById('f-return-date').value=today;
+
+  try{
+    const site=await api('/sites/'+SITE_PATH);
+    siteId=site.id;
+    await loadEmployees();
+    await checkApprover();
+    loadUnifiedBadge().catch(()=>{});
+    if(ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(user.email)){
+      document.getElementById('tab-admin-btn').style.display='block';
+    }
+  }catch(e){ alert('SharePoint 연결 오류: '+e.message); }
+}
+
+// ── Employees ──
+async function loadEmployees(){
+  try{
+    const drivesData=await api('/sites/'+siteId+'/drives');
+    const docDrive=drivesData.value.find(d=>d.name==='문서')||drivesData.value[0];
+    const t=await token();
+    const res=await fetch(GRAPH+'/drives/'+docDrive.id+'/root:/employee_search.xlsx:/content',{headers:{Authorization:'Bearer '+t}});
+    if(!res.ok)return;
+    const buf=await res.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    employeeData=rows.map(r=>({dept:r['Department']||'',team:r['Team']||'',name:r['EngName']||'',email:(r['EMail']||r['email']||'')})).filter(r=>r.email&&r.name);
+    populateDepts(1);
+    // 운전자 드롭다운도 채우기
+    const drvDept=document.getElementById('drv-dept-sel');
+    [...new Set(employeeData.map(e=>e.dept))].sort().forEach(d=>{
+      const o=document.createElement('option');o.value=d;o.textContent=d;drvDept.appendChild(o);
+    });
+  }catch(e){ console.warn('직원 데이터 로드 실패:',e); }
+}
+
+function populateDepts(idx){
+  const sel=document.getElementById('a'+idx+'-dept');
+  sel.innerHTML='<option value="">부서</option>';
+  [...new Set(employeeData.map(e=>e.dept))].sort().forEach(d=>{
+    const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);
+  });
+}
+function onDeptChange(idx){
+  const dept=document.getElementById('a'+idx+'-dept').value;
+  const tSel=document.getElementById('a'+idx+'-team');
+  const pSel=document.getElementById('a'+idx+'-person');
+  document.getElementById('a'+idx+'-name').value='';
+  document.getElementById('a'+idx+'-email').value='';
+  tSel.innerHTML='<option value="">팀</option>';
+  [...new Set(employeeData.filter(e=>e.dept===dept).map(e=>e.team))].sort().forEach(t=>{
+    const o=document.createElement('option');o.value=t;o.textContent=t;tSel.appendChild(o);
+  });
+  tSel.disabled=!dept; pSel.innerHTML='<option value="">직원 선택</option>'; pSel.disabled=true;
+}
+function onTeamChange(idx){
+  const dept=document.getElementById('a'+idx+'-dept').value;
+  const team=document.getElementById('a'+idx+'-team').value;
+  const pSel=document.getElementById('a'+idx+'-person');
+  document.getElementById('a'+idx+'-name').value='';
+  document.getElementById('a'+idx+'-email').value='';
+  const persons=employeeData.filter(e=>e.dept===dept&&e.team===team);
+  pSel.innerHTML='<option value="">직원 선택</option>';
+  persons.forEach(p=>{const o=document.createElement('option');o.value=p.email;o.textContent=p.name;pSel.appendChild(o);});
+  pSel.disabled=!team;
+}
+function onPersonChange(idx){
+  const email=document.getElementById('a'+idx+'-person').value;
+  const p=employeeData.find(e=>e.email===email);
+  document.getElementById('a'+idx+'-name').value=p?p.name:'';
+  document.getElementById('a'+idx+'-email').value=p?p.email:'';
+}
+
+// ── Driver ──
+function fillRequesterAsDriver(){
+  const checked=document.getElementById('same-as-requester').checked;
+  document.getElementById('other-employee').checked=false;
+  document.getElementById('other-emp-search').style.display='none';
+  if(checked){
+    document.getElementById('f-driver-name').value=user.name||'';
+    document.getElementById('f-driver-dept').value='';
+    document.getElementById('f-driver-name').readOnly=true;
+  } else {
+    document.getElementById('f-driver-name').value='';
+    document.getElementById('f-driver-name').readOnly=false;
+  }
+}
+function toggleOtherEmployee(){
+  const checked=document.getElementById('other-employee').checked;
+  document.getElementById('same-as-requester').checked=false;
+  document.getElementById('f-driver-name').readOnly=false;
+  document.getElementById('f-driver-name').value='';
+  document.getElementById('f-driver-dept').value='';
+  document.getElementById('other-emp-search').style.display=checked?'block':'none';
+}
+function drvDeptChange(){
+  const dept=document.getElementById('drv-dept-sel').value;
+  const tSel=document.getElementById('drv-team-sel');
+  const pSel=document.getElementById('drv-person-sel');
+  document.getElementById('f-driver-name').value='';
+  document.getElementById('f-driver-dept').value='';
+  tSel.innerHTML='<option value="">팀</option>';
+  [...new Set(employeeData.filter(e=>e.dept===dept).map(e=>e.team))].sort().forEach(t=>{
+    const o=document.createElement('option');o.value=t;o.textContent=t;tSel.appendChild(o);
+  });
+  tSel.disabled=!dept; pSel.innerHTML='<option value="">직원 선택</option>'; pSel.disabled=true;
+}
+function drvTeamChange(){
+  const dept=document.getElementById('drv-dept-sel').value;
+  const team=document.getElementById('drv-team-sel').value;
+  const pSel=document.getElementById('drv-person-sel');
+  pSel.innerHTML='<option value="">직원 선택</option>';
+  employeeData.filter(e=>e.dept===dept&&e.team===team).forEach(p=>{
+    const o=document.createElement('option');o.value=p.email+'|'+p.dept;o.textContent=p.name;pSel.appendChild(o);
+  });
+  pSel.disabled=!team;
+}
+function drvPersonChange(){
+  const val=document.getElementById('drv-person-sel').value;
+  const [email,dept]=val.split('|');
+  const p=employeeData.find(e=>e.email===email);
+  document.getElementById('f-driver-name').value=p?p.name:'';
+  document.getElementById('f-driver-dept').value=dept||'';
+}
+
+// ── File ──
+function rf(id){ const el=document.getElementById(id); if(el)el.value=''; }
+function checkMcFileSize(input){
+  if(!input.files[0])return;
+  const mb=input.files[0].size/1024/1024;
+  if(mb>20){ alert(input.files[0].name+'\n파일 크기('+mb.toFixed(1)+'MB)가 최대 허용 용량(20MB)을 초과합니다.'); input.value=''; }
+}
+
+// ── Tab ──
+function switchTab(t){
+  ['form','list','appr','admin'].forEach(n=>{
+    document.getElementById('tab-'+n).style.display=n===t?'block':'none';
+    document.getElementById('tab-'+n+'-btn').classList.toggle('active',n===t);
+  });
+  if(t==='list'){dynLoadStart('신청 목록 불러오는 중');loadMyList();}
+  if(t==='appr'){dynLoadStart('결재 정보 확인 중');loadApprovalQueue();}
+  if(t==='admin'){dynLoadStart('전체 신청 불러오는 중');loadAdminList();}
+}
+
+// ── Submit ──
+async function submitForm(){
+  const company=document.getElementById('f-company').value;
+  const dept=document.getElementById('f-dept').value;
+  const purpose=document.getElementById('f-purpose').value.trim();
+  const pickupDate=document.getElementById('f-pickup-date').value;
+  const returnDate=document.getElementById('f-return-date').value;
+  const driverName=document.getElementById('f-driver-name').value.trim();
+  const a1Email=document.getElementById('a1-email').value;
+
+  if(!dept){alert('Department를 선택해주세요.');return;}
+  if(!purpose){alert('Purpose를 입력해주세요.');return;}
+  if(!pickupDate||!returnDate){alert('사용 기간을 입력해주세요.');return;}
+  if(!driverName){alert('운전자 정보를 입력해주세요.');return;}
+  if(!a1Email){alert('1차 결재자(Line Manager)를 지정해주세요.');return;}
+
+  // 파일 용량 체크
+  const fileIds=['att1','att2','att3','att4','att5'];
+  let totalMB=0;
+  for(const fid of fileIds){
+    const el=document.getElementById(fid);
+    if(el&&el.files[0]){
+      const mb=el.files[0].size/1024/1024;
+      if(mb>20){alert(el.files[0].name+'\n파일 크기('+mb.toFixed(1)+'MB)가 최대 허용 용량(20MB)을 초과합니다.');el.value='';return;}
+      totalMB+=mb;
+    }
+  }
+  if(totalMB>20){alert('첨부파일 전체 합계('+totalMB.toFixed(1)+'MB)가 최대 허용 용량(20MB)을 초과합니다.');return;}
+
+  const pickupH=document.getElementById('f-pickup-h').value;
+  const pickupAP=document.getElementById('f-pickup-ampm').value;
+  const returnH=document.getElementById('f-return-h').value;
+  const returnAP=document.getElementById('f-return-ampm').value;
+  const period=pickupDate+' '+pickupH+':00 '+pickupAP+' ~ '+returnDate+' '+returnH+':00 '+returnAP;
+
+  loading(true);
+  try{
+    const now=new Date().toISOString();
+    const fields={
+      Title:'MC-'+now.slice(0,10)+' '+dept,
+      Company:company, Department:dept,
+      CarModel:document.getElementById('f-carmodel').value,
+      CarNumber:document.getElementById('f-carnum').value,
+      Purpose:purpose, Period:period,
+      DriverName:driverName,
+      DriverDept:document.getElementById('f-driver-dept').value,
+      Status:'대기', RequesterEmail:user.email, RequestDate:now,
+    };
+    const item=await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items','POST',{fields});
+    const reqId=parseInt(item.id);
+
+    // 파일 업로드
+    const allFiles=[];
+    fileIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.files.length)allFiles.push(...el.files);});
+    if(allFiles.length){
+      try{
+        const drivesData=await api('/sites/'+siteId+'/drives');
+        const drive=drivesData.value.find(d=>d.name==='AttachedFiles')||drivesData.value[0];
+        const t=await token();
+        const links=[];
+        for(const file of allFiles){
+          try{
+            const buf=await file.arrayBuffer();
+            const res=await fetch(GRAPH+'/drives/'+drive.id+'/root:/MC_Requests_AttachedFiles/'+reqId+'/'+encodeURIComponent(file.name)+':/content',
+              {method:'PUT',headers:{Authorization:'Bearer '+t,'Content-Type':file.type||'application/octet-stream'},body:buf});
+            if(res.ok){const u=await res.json();links.push(file.name+'||'+drive.id+'||'+u.id);}
+          }catch(fe){console.error(fe);}
+        }
+        if(links.length)await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
+      }catch(fe){console.error(fe);}
+    }
+
+    // 결재자 등록
+    const a1Name=document.getElementById('a1-name').value;
+    const approvers=[
+      {name:a1Name,email:a1Email,role:'1차결재자(Line Manager)',order:1},
+      A2, A3
+    ];
+    for(const a of approvers){
+      await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items','POST',{fields:{
+        Title:reqId+'-'+a.order, RequestID:reqId,
+        ApproverEmail:a.email, ApproverName:a.name,
+        ApproverRole:a.role, ApprovalOrder:a.order,
+        Status:a.order===1?'대기':'대기(잠김)'
+      }});
+    }
+    alert('✅ 신청이 완료되었습니다! (번호: '+reqId+')');
+    resetForm(); switchTab('list');
+  }catch(e){alert('오류: '+e.message);}
+  finally{loading(false);}
+}
+
+function resetForm(){
+  document.getElementById('f-dept').selectedIndex=0;
+  document.getElementById('f-carmodel').value='';
+  document.getElementById('f-carnum').value='';
+  document.getElementById('f-purpose').value='';
+  document.getElementById('purpose-count').textContent='0';
+  document.getElementById('f-driver-name').value='';
+  document.getElementById('f-driver-dept').value='';
+  document.getElementById('same-as-requester').checked=false;
+  document.getElementById('other-employee').checked=false;
+  document.getElementById('other-emp-search').style.display='none';
+  document.getElementById('f-driver-name').readOnly=false;
+  ['att1','att2','att3','att4','att5'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('a1-dept').selectedIndex=0;
+  document.getElementById('a1-team').innerHTML='<option value="">팀</option>';
+  document.getElementById('a1-team').disabled=true;
+  document.getElementById('a1-person').innerHTML='<option value="">직원 선택</option>';
+  document.getElementById('a1-person').disabled=true;
+  document.getElementById('a1-name').value='';
+  document.getElementById('a1-email').value='';
+}
+
+// ── Pagination ──
+const PAGE_SIZE=20,_pgState={};
+function pgSet(id,items,renderer,empty,cols){_pgState[id]={items,page:0,renderer,empty,cols};pgRender(id);}
+function pgRender(id){
+  const s=_pgState[id];if(!s)return;
+  const tbody=document.getElementById(id+'-body');if(!tbody)return;
+  const total=s.items.length,pages=Math.max(1,Math.ceil(total/PAGE_SIZE)),cur=Math.min(s.page,pages-1);
+  s.page=cur;
+  const slice=s.items.slice(cur*PAGE_SIZE,(cur+1)*PAGE_SIZE);
+  tbody.innerHTML=slice.length?slice.map(s.renderer).join(''):`<tr><td colspan="${s.cols}" style="text-align:center;padding:32px;color:#605e5c">${s.empty}</td></tr>`;
+  dynLoadEnd();
+  let pg=document.getElementById(id+'-pagination');if(!pg)return;
+  if(pages<=1){pg.innerHTML='';return;}
+  const bs=(a,c)=>{const base='border-radius:4px;padding:4px 9px;font-size:.8rem;cursor:pointer;border:1px solid ';return c?base+'#0078d4;background:#0078d4;color:#fff;font-weight:700':a?base+'#d2d0ce;background:#fff;color:#323130':base+'#edebe9;background:#f3f2f1;color:#a19f9d;cursor:default';};
+  let html=`<button onclick="pgGo('${id}',${cur-1})" style="${bs(cur>0)}" ${cur===0?'disabled':''}>&#8249;</button>`;
+  for(let p=0;p<pages;p++){if(pages>7&&p>0&&p<pages-1&&Math.abs(p-cur)>2){if(p===cur-3||p===cur+3)html+='<span style="padding:0 4px">…</span>';continue;}html+=`<button onclick="pgGo('${id}',${p})" style="${bs(true,p===cur)}">${p+1}</button>`;}
+  html+=`<button onclick="pgGo('${id}',${cur+1})" style="${bs(cur<pages-1)}" ${cur===pages-1?'disabled':''}>&#8250;</button>`;
+  pg.innerHTML=html;
+}
+function pgGo(id,p){if(!_pgState[id])return;const tot=_pgState[id].items.length,pages=Math.ceil(tot/PAGE_SIZE);if(p<0||p>=pages)return;_pgState[id].page=p;pgRender(id);document.getElementById(id+'-body')?.closest('table')?.scrollIntoView({behavior:'smooth',block:'start'});}
+
+// ── Load Lists ──
+async function loadMyList(){
+  try{
+    const data=await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500');
+    const mine=data.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===(user.email||'').toLowerCase()).sort((a,b)=>b.id-a.id);
+    pgSet('list',mine,item=>{const f=item.fields;return`<tr onclick="showDetail(${item.id})"><td>${item.id}</td><td>${f.Company||''}</td><td>${f.Department||''}</td><td style="font-size:.75rem">${f.Period||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;}, '신청 내역이 없습니다.', 6);
+  }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="6" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
+}
+
+async function loadApprovalQueue(){
+  try{
+    const [apprData,reqData]=await Promise.all([
+      api('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
+      api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
+    ]);
+    const reqMap={};reqData.value.forEach(r=>{reqMap[r.id]=r.fields;});
+    const mine=apprData.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(i.fields.Status||'').trim()==='대기').sort((a,b)=>b.fields.RequestID-a.fields.RequestID);
+    const rows=mine.map(item=>{
+      const f=item.fields,rf=reqMap[String(f.RequestID)]||{};
+      return`<tr><td style="color:#0078d4;cursor:pointer" onclick="showDetail(${f.RequestID})">${f.RequestID}</td><td>${rf.RequesterEmail||''}</td><td>${rf.Department||''}</td><td style="font-size:.75rem">${rf.Period||''}</td><td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDate(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID})">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID})">반려</button></td></tr>`;
+    });
+    dynLoadEnd();
+    pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',7);
+    const badge=document.getElementById('appr-badge');badge.textContent=mine.length;badge.style.display=mine.length?'inline':'none';
+  }catch(e){document.getElementById('appr-body').innerHTML=`<tr><td colspan="7" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
+}
+
+async function checkApprover(){
+  if(!siteId)return;
+  try{
+    const data=await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500');
+    const mine=data.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(i.fields.Status||'').trim()==='대기');
+    const badge=document.getElementById('appr-badge');badge.textContent=mine.length;badge.style.display=mine.length?'inline':'none';
+  }catch(e){}
+}
+
+async function loadAdminList(){
+  try{
+    const data=await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500');
+    const status=document.getElementById('admin-status').value;
+    const dept=document.getElementById('admin-dept').value;
+    let items=data.value.sort((a,b)=>b.id-a.id);
+    if(status)items=items.filter(i=>i.fields.Status===status);
+    if(dept)items=items.filter(i=>i.fields.Department===dept);
+    document.getElementById('admin-count').textContent='총 '+items.length+'건';
+    pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.Department||''}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+  }catch(e){dynLoadEnd();}
+}
+
+// ── Process Approval ──
+let _pendingApproval=null;
+function showConfirm(apprId,action,reqId){
+  _pendingApproval={apprId,action,reqId};
+  const isReject=action==='반려';
+  document.getElementById('confirm-title').textContent=isReject?'❌ 반려 확인':'✅ 승인 확인';
+  document.getElementById('confirm-sub').textContent=isReject?'반려 사유를 입력해주세요. (필수)':'이 신청을 승인하시겠습니까?';
+  const commentEl=document.getElementById('confirm-comment');
+  commentEl.value=''; commentEl.placeholder=isReject?'반려 사유 입력 (필수)':'의견 입력 (선택사항)';
+  const okBtn=document.getElementById('confirm-ok-btn');
+  okBtn.textContent=isReject?'반려':'승인';
+  okBtn.style.background=isReject?'#a4262c':'#107c10';
+  okBtn.style.color='#fff'; okBtn.onclick=confirmApproval;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); _pendingApproval=null; }
+async function confirmApproval(){
+  if(!_pendingApproval)return;
+  const{apprId,action,reqId}=_pendingApproval;
+  const comment=document.getElementById('confirm-comment').value.trim();
+  if(action==='반려'&&!comment){alert('반려 사유를 입력해주세요.');return;}
+  closeConfirm();
+  await processApproval(apprId,action,reqId,comment);
+  const uniModal=document.getElementById('unified-modal');
+  if(uniModal&&uniModal.classList.contains('open'))setTimeout(()=>loadUnifiedData(),800);
+}
+async function processApproval(apprId,action,reqId,comment=''){
+  loading(true);
+  try{
+    await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items/'+apprId,'PATCH',{fields:{Status:action==='승인'?'승인':action,ApprovalDate:new Date().toISOString(),Comment:comment}});
+    if(action==='반려'){
+      await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Status:'반려'}});
+    } else {
+      const all=await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500');
+      const next=all.value.filter(i=>i.fields.RequestID===reqId&&(i.fields.Status||'').trim()==='대기(잠김)').sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+      if(next.length) await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items/'+next[0].id,'PATCH',{fields:{Status:'대기'}});
+      else await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Status:'승인완료'}});
+    }
+    closeModal(); loadApprovalQueue();
+  }catch(e){alert('오류: '+e.message);}
+  finally{loading(false);}
+}
+
+// ── Detail Modal ──
+async function showDetail(id){
+  const modal=document.getElementById('detail-modal');
+  document.getElementById('modal-content').innerHTML='<div style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</div>';
+  modal.className='open';
+  try{
+    const [r,apprData]=await Promise.all([
+      api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+id+'?$expand=fields'),
+      api('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
+    ]);
+    const f=r.fields;
+    const apprList=apprData.value.filter(i=>i.fields.RequestID===parseInt(id)).sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+    const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
+    const sec=t=>`<div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:6px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
+    const row=(l,v)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value">${v||'-'}</div></div>`;
+
+    let filesHtml='<div style="font-size:13px;color:#605e5c">첨부파일 없음</div>';
+    if(f.AttachedFiles){
+      filesHtml=f.AttachedFiles.split(';').map(entry=>{
+        const parts=entry.split('||'),name=parts[0]||entry;
+        if(parts.length===3){
+          const driveId=decodeURIComponent(parts[1]),itemId=decodeURIComponent(parts[2]);
+          return`<div style="padding:4px 0;font-size:13px">📎 <a href="#" class="file-dl-link" data-drive="${encodeURIComponent(driveId)}" data-id="${encodeURIComponent(itemId)}" data-name="${encodeURIComponent(name)}" style="color:#0078d4;cursor:pointer">${name}</a></div>`;
+        }
+        return`<div style="padding:4px 0;font-size:13px;color:#605e5c">📎 ${name}</div>`;
+      }).join('');
+    }
+
+    const apprHtml2=sec('결재 이력')+
+      '<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden">'+
+      apprList.map(a=>{const af=a.fields;return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:13px">${af.ApprovalOrder||''}차 ${af.ApproverRole||''}</div><div style="font-size:12px;color:#605e5c;margin-top:2px">${af.ApproverName||''} · ${af.ApproverEmail||''}</div>${af.ApprovalDate?`<div style="font-size:11px;color:#a19f9d;margin-top:2px">${fmtDate(af.ApprovalDate)}</div>`:''}${af.Comment?`<div style="margin-top:4px;background:#fff;border:1px solid #edebe9;border-radius:4px;padding:4px 8px;font-size:12px;color:#605e5c">💬 ${af.Comment}</div>`:''}</div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:12px;white-space:nowrap;margin-left:8px">${af.Status||''}</span></div>`;}).join('')+
+      '</div>';
+
+    const myPending=apprList.find(a=>(a.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(a.fields.Status||'').trim()==='대기');
+
+    document.getElementById('modal-content').innerHTML=
+      sec('기본 정보')+
+      row('신청번호',id)+row('신청자',f.RequesterEmail)+row('Company',f.Company)+
+      row('Department',f.Department)+row('Car Model',f.CarModel)+row('Car Number',f.CarNumber)+
+      row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+
+      row('신청일',fmtDate(f.RequestDate))+
+      sec('사용 정보')+
+      row('사용 기간',f.Period)+row('Purpose',f.Purpose)+
+      sec('운전자 정보')+
+      row('Driver Name',f.DriverName)+row('Driver Dept',f.DriverDept)+
+      sec('첨부파일')+filesHtml+
+      apprHtml2+
+      (myPending?`<div style="display:flex;gap:10px;margin-top:14px"><button onclick="showConfirm(${myPending.id},'승인',${id})" class="btn-approve" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">✅ 승인</button><button onclick="showConfirm(${myPending.id},'반려',${id})" class="btn-reject" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">❌ 반려</button></div>`:'');
+
+    // 파일 다운로드
+    document.querySelectorAll('.file-dl-link').forEach(a=>{
+      a.addEventListener('click',async e=>{
+        e.preventDefault();
+        try{
+          const t=await token();
+          const driveId=decodeURIComponent(a.dataset.drive),itemId=decodeURIComponent(a.dataset.id),name=decodeURIComponent(a.dataset.name);
+          const res=await fetch(GRAPH+'/drives/'+driveId+'/items/'+itemId+'?select=id,name,%40microsoft.graph.downloadUrl,webUrl',{headers:{Authorization:'Bearer '+t}});
+          const data=await res.json();
+          const dlUrl=data['@microsoft.graph.downloadUrl']||data.webUrl;
+          if(dlUrl){const anchor=document.createElement('a');anchor.href=dlUrl;anchor.download=name;document.body.appendChild(anchor);anchor.click();document.body.removeChild(anchor);}
+          else alert('다운로드 URL을 가져올 수 없습니다.');
+        }catch(e){alert('다운로드 오류: '+e.message);}
+      });
+    });
+  }catch(e){document.getElementById('modal-content').innerHTML='<p style="color:#a4262c">오류: '+e.message+'</p>';}
+}
+function closeModal(){ document.getElementById('detail-modal').className=''; }
+
+// ── Dynamic Loading ──
+let _dynLoadTimer=null,_dynMsgTimer=null;
+const _dynMsgs=['Mobility 데이터 불러오는 중','결재 정보 확인 중','신청 목록 로딩 중','잠시만 기다려주세요'];
+function dynLoadStart(msg){
+  const el=document.getElementById('dyn-loading'),msgEl=document.getElementById('dyn-msg-text');
+  const refreshBtn=document.getElementById('dyn-refresh-btn');
+  if(!el)return;
+  let i=0; if(msgEl)msgEl.textContent=msg||_dynMsgs[0];
+  if(refreshBtn)refreshBtn.style.display='none';
+  el.classList.add('show');
+  _dynMsgTimer=setInterval(()=>{i=(i+1)%_dynMsgs.length;if(msgEl)msgEl.textContent=_dynMsgs[i];},2500);
+  _dynLoadTimer=setTimeout(()=>{
+    document.getElementById('dyn-sub-text').textContent='로딩이 오래 걸리고 있습니다. 새로고침해주세요.';
+    if(refreshBtn)refreshBtn.style.display='inline-block';
+  },15000);
+}
+function dynLoadEnd(){
+  const el=document.getElementById('dyn-loading');if(el)el.classList.remove('show');
+  if(_dynLoadTimer){clearTimeout(_dynLoadTimer);_dynLoadTimer=null;}
+  if(_dynMsgTimer){clearInterval(_dynMsgTimer);_dynMsgTimer=null;}
+}
+
+// ── 통합결재함 ──
+const _UNIFIED_SYSTEMS=[
+  {key:'IT',name:'IT Ticket',list:'IT_Approvals',reqList:'IT_Requests',url:'https://itsm-ticket.startruckkorea.com/',color:'sys-IT'},
+  {key:'SCC',name:'STK Contract',list:'STK_ContractApprovals',reqList:'STK_Contracts',url:'https://scc.startruckkorea.com/',color:'sys-SCC'},
+  {key:'GW',name:'Goodwill Approval',list:'GW_Approvals',reqList:'GW_Requests',url:'https://gw.startruckkorea.com/',color:'sys-GW'},
+  {key:'BP',name:'BP Master Data',list:'BP_Approvals',reqList:'BP_Requests',url:'https://bp-master.startruckkorea.com/',color:'sys-BP'},
+  {key:'FA',name:'FA Registration',list:'FA_Approvals',reqList:'FA_Requests',url:'https://fa.startruckkorea.com/',color:'sys-FA'},
+  {key:'MC',name:'Mobility Car',list:'MC_Approvals',reqList:'MC_Requests',url:'https://mc.startruckkorea.com/',color:'sys-MC'},
+];
+let _uniCache={};
+
+function openUniDetail(apprId){
+  const d=_uniCache[apprId];if(!d)return;
+  const{sys,reqId,rf,apprList}=d;
+  const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
+  const fmt=s=>{if(!s)return'-';const v=new Date(s);return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0')+' '+String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');};
+  let rows='';
+  if(sys.key==='MC') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">Department</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Department||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">사용기간</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1;font-size:.75rem">${rf.Period||'-'}</td></tr>`;
+  else if(sys.key==='GW') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">Source</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Source||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">Type</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.GoodwillType||'-'}</td></tr>`;
+  else if(sys.key==='BP') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">BP Type</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.BPType||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">Sub Category</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.SubCategory||'-'}</td></tr>`;
+  else if(sys.key==='FA') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">FA Type</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.FAType||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">제목</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Title||'-'}</td></tr>`;
+  else if(sys.key==='SCC') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">제목</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Title||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">유형</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.ContractCompanyType||'-'}</td></tr>`;
+  else rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">유형</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.TicketType||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">제목</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Title||'-'}</td></tr>`;
+  const inner=document.getElementById('uni-detail-inner');
+  if(!inner)return;
+  inner.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-weight:700;font-size:.95rem;color:#323130"><span class="sys-badge ${sys.color}" style="margin-right:6px">${sys.key}</span>신청번호 ${reqId}</div><button onclick="closeUniDetail()" style="background:none;border:1px solid #d2d0ce;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.85rem;color:#605e5c">✕</button></div>`+
+    `<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:12px"><tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">신청자</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.RequesterEmail||'-'}</td></tr>${rows}<tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">상태</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1;font-weight:600;color:${sc[rf.Status]||'#323130'}">${rf.Status||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0">신청일</td><td style="padding:5px 0">${fmt(rf.RequestDate)}</td></tr></table>`+
+    `<div style="font-size:.72rem;font-weight:600;color:#0078d4;background:#f0f6ff;border-left:3px solid #0078d4;padding:5px 10px;border-radius:4px;margin-bottom:8px">결재 현황</div>`+
+    `<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden;margin-bottom:14px">${apprList.map(af=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:.8rem">${af.ApprovalOrder||''}차 ${af.ApproverRole||''}</div><div style="font-size:.72rem;color:#605e5c">${af.ApproverName||''} · ${af.ApproverEmail||''}</div></div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:.75rem;white-space:nowrap">${af.Status||''}</span></div>`).join('')}</div>`+
+    `<div style="display:flex;gap:10px;margin-bottom:10px"><button onclick="showConfirm(${apprId},'승인',${reqId});closeUniDetail();" class="btn-approve" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">✅ 승인</button><button onclick="showConfirm(${apprId},'반려',${reqId});closeUniDetail();" class="btn-reject" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">❌ 반려</button></div>`+
+    `<div style="text-align:right"><a href="${sys.url}" target="_blank" style="font-size:.72rem;color:#0078d4;text-decoration:none">${sys.name} 전체 보기 →</a></div>`;
+  document.getElementById('uni-detail-box').style.display='flex';
+}
+function closeUniDetail(){ const b=document.getElementById('uni-detail-box');if(b)b.style.display='none'; }
+async function loadUnifiedBadge(){
+  if(!siteId||!user)return;
+  let total=0;
+  await Promise.all(_UNIFIED_SYSTEMS.map(async sys=>{
+    try{ const d=await api('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'); total+=d.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(i.fields.Status||'').trim()==='대기').length; }catch(e){}
+  }));
+  const badge=document.getElementById('unif-badge');if(badge){badge.textContent=total;badge.style.display=total>0?'inline-block':'none';}
+}
+async function openUnifiedAppr(){ document.getElementById('unified-modal').classList.add('open'); document.getElementById('unified-body').innerHTML='<div style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</div>'; await loadUnifiedData(); }
+function closeUnifiedAppr(){ document.getElementById('unified-modal').classList.remove('open'); closeUniDetail(); }
+async function loadUnifiedData(){
+  if(!siteId||!user)return;
+  const myEmail=(user.email||user.username||'').toLowerCase();
+  const body=document.getElementById('unified-body');
+  let html='',grandTotal=0; _uniCache={};
+  const results=await Promise.all(_UNIFIED_SYSTEMS.map(async sys=>{
+    try{
+      const [apprData,reqData]=await Promise.all([api('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'),api('/sites/'+siteId+'/lists/'+sys.reqList+'/items?$expand=fields&$top=500')]);
+      const reqMap={};reqData.value.forEach(r=>{reqMap[r.id]=r.fields;});
+      const allApprMap={};apprData.value.forEach(a=>{const rid=String(a.fields.RequestID);if(!allApprMap[rid])allApprMap[rid]=[];allApprMap[rid].push(a.fields);});
+      const mine=apprData.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').sort((a,b)=>b.fields.RequestID-a.fields.RequestID);
+      return{sys,mine,reqMap,allApprMap};
+    }catch(e){return{sys,mine:[],reqMap:{},allApprMap:{},error:e.message};}
+  }));
+  for(const{sys,mine,reqMap,allApprMap,error}of results){
+    grandTotal+=mine.length;
+    html+=`<div class="unified-sys-section"><div class="unified-sys-title"><span><span class="sys-badge ${sys.color}">${sys.key}</span> ${sys.name}${mine.length?` <span style="background:#a4262c;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:6px">${mine.length}</span>`:''}</span><a href="${sys.url}" target="_blank">바로가기 →</a></div>`;
+    if(error) html+=`<div class="unified-empty" style="color:#a4262c">⚠️ 로드 실패: ${error}</div>`;
+    else if(!mine.length) html+=`<div class="unified-empty">결재 대기 항목이 없습니다</div>`;
+    else{
+      html+=`<table class="unified-table"><thead><tr>`;
+      if(sys.key==='MC') html+=`<th>번호</th><th>Department</th><th>사용기간</th><th>신청자</th><th>신청일</th><th colspan="2" style="text-align:center">처리</th>`;
+      else if(sys.key==='GW') html+=`<th>번호</th><th>Source</th><th>Type</th><th>신청자</th><th>신청일</th><th colspan="2" style="text-align:center">처리</th>`;
+      else if(sys.key==='BP') html+=`<th>번호</th><th>Type</th><th>Sub Category</th><th>신청자</th><th>신청일</th><th colspan="2" style="text-align:center">처리</th>`;
+      else if(sys.key==='FA') html+=`<th>번호</th><th>FA Type</th><th>제목</th><th>신청자</th><th>신청일</th><th colspan="2" style="text-align:center">처리</th>`;
+      else if(sys.key==='SCC') html+=`<th>번호</th><th>제목</th><th>유형</th><th>신청자</th><th>신청일</th><th colspan="2" style="text-align:center">처리</th>`;
+      else html+=`<th>번호</th><th>유형</th><th>제목</th><th>신청자</th><th>신청일</th><th colspan="2" style="text-align:center">처리</th>`;
+      html+=`</tr></thead><tbody>`;
+      mine.forEach(item=>{
+        const f=item.fields,rf=reqMap[String(f.RequestID)]||{};
+        const apprList=(allApprMap[String(f.RequestID)]||[]).sort((a,b)=>(a.ApprovalOrder||0)-(b.ApprovalOrder||0));
+        _uniCache[item.id]={sys,reqId:f.RequestID,rf,apprList};
+        const fmt=s=>{if(!s)return'-';const v=new Date(s);return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0')+' '+String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');};
+        let cols='';
+        if(sys.key==='MC') cols=`<td>${rf.Department||'-'}</td><td style="font-size:.72rem">${rf.Period||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
+        else if(sys.key==='GW') cols=`<td>${rf.Source||'-'}</td><td>${rf.GoodwillType||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
+        else if(sys.key==='BP') cols=`<td><span class="sys-badge ${sys.color}">${rf.BPType||'-'}</span></td><td>${rf.SubCategory||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
+        else if(sys.key==='FA') cols=`<td><span class="sys-badge ${sys.color}">${rf.FAType||'-'}</span></td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rf.Title||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
+        else if(sys.key==='SCC') cols=`<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rf.Title||'-'}</td><td>${rf.ContractCompanyType||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
+        else cols=`<td><span class="sys-badge ${sys.color}">${rf.TicketType||'-'}</span></td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rf.Title||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
+        html+=`<tr style="cursor:pointer" onclick="openUniDetail(${item.id})"><td style="color:#0078d4;font-weight:600">${f.RequestID}</td>${cols}<td onclick="event.stopPropagation()" style="text-align:center"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID})">✅ 승인</button></td><td onclick="event.stopPropagation()" style="text-align:center"><button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID})">❌ 반려</button></td></tr>`;
+      });
+      html+=`</tbody></table>`;
+    }
+    html+=`</div>`;
+  }
+  if(!grandTotal) html=`<div style="text-align:center;padding:48px;color:#a19f9d"><div style="font-size:2rem;margin-bottom:12px">✅</div><div style="font-size:.9rem;font-weight:600;color:#323130;margin-bottom:6px">모든 결재 완료!</div><div style="font-size:.78rem">현재 대기 중인 결재 항목이 없습니다.</div></div>`;
+  body.innerHTML=html;
+  const badge=document.getElementById('unif-badge');if(badge){badge.textContent=grandTotal;badge.style.display=grandTotal>0?'inline-block':'none';}
+}
+</script>
+</body>
+</html>
