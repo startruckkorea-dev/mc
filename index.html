@@ -919,8 +919,7 @@ async function showDetail(id){
       let cleanFiles = f.AttachedFiles;
       cleanFiles = cleanFiles.replace(/<[^>]*>/g, '');
       cleanFiles = cleanFiles.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').trim();
-      const fileEntries = cleanFiles.split(/[;
-]+/).filter(e=>e.trim()&&e.includes('||'));
+      const fileEntries = cleanFiles.split(/[;\n]+/).filter(e=>e.trim()&&e.includes('||'));
       filesHtml = fileEntries.map(entry=>{
         if(!entry.trim()) return '';
         const firstSep = entry.indexOf('||');
