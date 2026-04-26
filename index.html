@@ -125,7 +125,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .sys-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:700;margin-right:4px}
 .sys-IT{background:#e8f4ff;color:#0078d4}.sys-SCC{background:#f0fff4;color:#107c10}
 .sys-GW{background:#fff8e1;color:#b45309}.sys-BP{background:#f3e8ff;color:#7b2d8b}
-.sys-FA{background:#fce8ff;color:#881798}.sys-MC{background:#e8fff0;color:#006b3e}
+.sys-FA{background:#fce8ff;color:#881798}.sys-MC{background:#e8fff0;color:#006b3e}.sys-RR{background:#fff0f0;color:#c50f1f}
 /* uni-detail */
 #uni-detail-box{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;align-items:center;justify-content:center}
 #uni-detail-inner{background:#fff;border-radius:10px;padding:22px;width:480px;max-width:94vw;max-height:82vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25)}
@@ -189,7 +189,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" id="tab-form-btn" onclick="switchTab('form')">신청서 작성</button>
+    <button class="tab-btn active" id="tab-form-btn" onclick="switchTab('form')">🚗 Mobility Car</button>
+    <button class="tab-btn" id="tab-rr-form-btn" onclick="switchTab('rr-form')">🔧 Repair Report</button>
     <button class="tab-btn" id="tab-list-btn" onclick="switchTab('list')">내 신청 목록</button>
     <button class="tab-btn" id="tab-appr-btn" onclick="switchTab('appr')">결재함 <span class="badge" id="appr-badge"></span></button>
     <button class="tab-btn" id="tab-admin-btn" style="display:none" onclick="switchTab('admin')">관리자</button>
@@ -394,6 +395,119 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     </div>
     <div id="admin-pagination"></div>
   </div>
+
+  <!-- Repair Report 신청서 -->
+  <div id="tab-rr-form" style="display:none">
+    <div class="card">
+      <div class="card-title">🔧 Repair Report</div>
+
+      <div class="section-title">1. Vehicle Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vehicle Model <span class="req-mark">*</span></label>
+          <input type="text" id="rr-vehicle-model" placeholder="e.g. Mercedes Actros">
+        </div>
+        <div class="form-group">
+          <label>Vehicle Plate Number <span class="req-mark">*</span></label>
+          <input type="text" id="rr-plate-number" placeholder="e.g. 12가 3456">
+        </div>
+      </div>
+
+      <div class="section-title">2. Accident Details</div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Detailed Description of Accident <span class="req-mark">*</span></label>
+          <textarea id="rr-description" rows="4" placeholder="Please describe the accident in detail" maxlength="3950" oninput="document.getElementById('rr-desc-count').textContent=this.value.length"></textarea>
+          <div style="text-align:right;font-size:.7rem;color:#605e5c"><span id="rr-desc-count">0</span> / 3950 bytes</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date &amp; Time of Accident <span class="req-mark">*</span></label>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <input type="date" id="rr-accident-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;flex:1;min-width:130px">
+            <span style="font-size:.75rem;color:#605e5c">TIME</span>
+            <select id="rr-accident-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 6px;font-size:.82rem"></select>
+            <select id="rr-accident-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 6px;font-size:.82rem"><option>AM</option><option selected>PM</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Accident Type <span class="req-mark">*</span></label>
+          <select id="rr-accident-type" style="border:1px solid #d2d0ce;border-radius:4px;padding:7px 10px;font-size:.82rem;font-family:inherit">
+            <option value="">-- Choice Type --</option>
+            <option>Collision</option>
+            <option>Theft</option>
+            <option>Natural Disaster</option>
+            <option>Accident while Parked</option>
+            <option>Others</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Passenger(s) <span class="req-mark">*</span></label>
+          <input type="text" id="rr-passengers" placeholder="Names of passengers at the time">
+        </div>
+        <div class="form-group">
+          <label>Location of Accident <span class="req-mark">*</span></label>
+          <input type="text" id="rr-location" placeholder="e.g. Seoul, Gangnam-gu">
+        </div>
+      </div>
+
+      <div class="section-title">3. Attachment</div>
+      <div style="background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:9px 14px;margin-bottom:10px;font-size:.75rem;color:#0078d4">
+        📎 Please download and attach the <b>&lt;&lt;application form&gt;&gt;</b>. ※ Max 20MB per file / 20MB total
+      </div>
+      <div class="file-row"><input type="file" id="rr-att1" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att1')">Reset</button></div>
+      <div class="file-row"><input type="file" id="rr-att2" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att2')">Reset</button></div>
+      <div class="file-row"><input type="file" id="rr-att3" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att3')">Reset</button></div>
+      <div class="file-row"><input type="file" id="rr-att4" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att4')">Reset</button></div>
+      <div class="file-row"><input type="file" id="rr-att5" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att5')">Reset</button></div>
+
+      <div class="section-title">4. Approvers</div>
+      <div style="background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.75rem">
+        <div style="font-weight:600;color:#0078d4;margin-bottom:4px">결재 라인</div>
+        <div>1차 Line Manager → 2차 Hye-jin Yoon <span style="color:#0078d4">(고정)</span></div>
+      </div>
+      <div class="appr-block">
+        <div class="appr-title">1차 결재자 <span class="req-mark">*</span> <span style="font-size:.7rem;font-weight:400;color:#605e5c">— Line Manager</span></div>
+        <div class="appr-grid">
+          <select id="rr-a1-dept" onchange="onDeptChange('rr-a1')"><option value="">부서</option></select>
+          <select id="rr-a1-team" onchange="onTeamChange('rr-a1')" disabled><option value="">팀</option></select>
+          <select id="rr-a1-person" onchange="onPersonChange('rr-a1')" disabled><option value="">직원 선택</option></select>
+        </div>
+        <div class="appr-info">
+          <input type="text" id="rr-a1-name" readonly placeholder="이름">
+          <input type="email" id="rr-a1-email" readonly placeholder="이메일">
+        </div>
+      </div>
+      <div class="appr-block appr-fixed">
+        <div class="appr-title">2차 결재자 <span style="font-size:.7rem;font-weight:400;color:#605e5c">— 관리자 (자동 지정)</span></div>
+        <div class="appr-info">
+          <input type="text" value="Junsoon Lee (TEST)" readonly>
+          <input type="email" value="jimmy.lee@hyosung.com" readonly>
+        </div>
+      </div>
+
+      <div style="background:#f9f8f7;border:1px solid #edebe9;border-radius:6px;padding:12px;margin-top:16px;font-size:.75rem;color:#605e5c;line-height:1.8">
+        <b style="color:#323130">Remark</b><br>
+        Responsibilities on traffic violations and damages occurred for the specific period of time are solely borne by the Applicant of this form.<br><br>
+        1) If an accident occurs while driving a company vehicle, it must be reported to the company immediately.<br>
+        2) If the vehicle is involved in an accident while in use, the user shall be responsible for up to 200,000~500,000 KRW of the vehicle insurance deductible.<br>
+        3) Company car user should fill out and send a mileage logbook to the company car management service provider.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="rrResetForm()">초기화</button>
+        <button class="btn-primary" onclick="rrSubmitForm()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RR 내 신청 목록 / 결재함은 공통 탭 내에서 구분 -->
+
 </div>
 
 <!-- Detail Modal -->
@@ -531,6 +645,10 @@ async function boot(account){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('f-pickup-date').value=today;
   document.getElementById('f-return-date').value=today;
+  // RR 시간 초기화
+  const rrHSel=document.getElementById('rr-accident-h');
+  h.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v==='12')o.selected=true;rrHSel.appendChild(o);});
+  document.getElementById('rr-accident-date').value=today;
 
   try{
     const site=await api('/sites/'+SITE_PATH);
@@ -557,6 +675,7 @@ async function loadEmployees(){
     const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     employeeData=rows.map(r=>({dept:r['Department']||'',team:r['Team']||'',name:r['EngName']||'',email:(r['EMail']||r['email']||'')})).filter(r=>r.email&&r.name);
     populateDepts(1);
+    rrPopulateDepts();
     // 운전자 드롭다운도 채우기
     const drvDept=document.getElementById('drv-dept-sel');
     [...new Set(employeeData.map(e=>e.dept))].sort().forEach(d=>{
@@ -573,11 +692,12 @@ function populateDepts(idx){
   });
 }
 function onDeptChange(idx){
-  const dept=document.getElementById('a'+idx+'-dept').value;
-  const tSel=document.getElementById('a'+idx+'-team');
-  const pSel=document.getElementById('a'+idx+'-person');
-  document.getElementById('a'+idx+'-name').value='';
-  document.getElementById('a'+idx+'-email').value='';
+  const pfx=typeof idx==='number'?'a'+idx:idx;
+  const dept=document.getElementById(pfx+'-dept').value;
+  const tSel=document.getElementById(pfx+'-team');
+  const pSel=document.getElementById(pfx+'-person');
+  document.getElementById(pfx+'-name').value='';
+  document.getElementById(pfx+'-email').value='';
   tSel.innerHTML='<option value="">팀</option>';
   [...new Set(employeeData.filter(e=>e.dept===dept).map(e=>e.team))].sort().forEach(t=>{
     const o=document.createElement('option');o.value=t;o.textContent=t;tSel.appendChild(o);
@@ -585,21 +705,23 @@ function onDeptChange(idx){
   tSel.disabled=!dept; pSel.innerHTML='<option value="">직원 선택</option>'; pSel.disabled=true;
 }
 function onTeamChange(idx){
-  const dept=document.getElementById('a'+idx+'-dept').value;
-  const team=document.getElementById('a'+idx+'-team').value;
-  const pSel=document.getElementById('a'+idx+'-person');
-  document.getElementById('a'+idx+'-name').value='';
-  document.getElementById('a'+idx+'-email').value='';
+  const pfx=typeof idx==='number'?'a'+idx:idx;
+  const dept=document.getElementById(pfx+'-dept').value;
+  const team=document.getElementById(pfx+'-team').value;
+  const pSel=document.getElementById(pfx+'-person');
+  document.getElementById(pfx+'-name').value='';
+  document.getElementById(pfx+'-email').value='';
   const persons=employeeData.filter(e=>e.dept===dept&&e.team===team);
   pSel.innerHTML='<option value="">직원 선택</option>';
   persons.forEach(p=>{const o=document.createElement('option');o.value=p.email;o.textContent=p.name;pSel.appendChild(o);});
   pSel.disabled=!team;
 }
 function onPersonChange(idx){
-  const email=document.getElementById('a'+idx+'-person').value;
+  const pfx=typeof idx==='number'?'a'+idx:idx;
+  const email=document.getElementById(pfx+'-person').value;
   const p=employeeData.find(e=>e.email===email);
-  document.getElementById('a'+idx+'-name').value=p?p.name:'';
-  document.getElementById('a'+idx+'-email').value=p?p.email:'';
+  document.getElementById(pfx+'-name').value=p?p.name:'';
+  document.getElementById(pfx+'-email').value=p?p.email:'';
 }
 
 // ── Driver ──
@@ -664,9 +786,10 @@ function checkMcFileSize(input){
 
 // ── Tab ──
 function switchTab(t){
-  ['form','list','appr','admin'].forEach(n=>{
+  ['form','rr-form','list','appr','admin'].forEach(n=>{
     document.getElementById('tab-'+n).style.display=n===t?'block':'none';
-    document.getElementById('tab-'+n+'-btn').classList.toggle('active',n===t);
+    const btn=document.getElementById('tab-'+n+'-btn');
+    if(btn)btn.classList.toggle('active',n===t);
   });
   if(t==='list'){dynLoadStart('신청 목록 불러오는 중');loadMyList();}
   if(t==='appr'){dynLoadStart('결재 정보 확인 중');loadApprovalQueue();}
@@ -1025,6 +1148,7 @@ const _UNIFIED_SYSTEMS=[
   {key:'BP',name:'BP Master Data',list:'BP_Approvals',reqList:'BP_Requests',url:'https://bp-master.startruckkorea.com/',color:'sys-BP'},
   {key:'FA',name:'FA Registration',list:'FA_Approvals',reqList:'FA_Requests',url:'https://fa.startruckkorea.com/',color:'sys-FA'},
   {key:'MC',name:'Mobility Car',list:'MC_Approvals',reqList:'MC_Requests',url:'https://mc.startruckkorea.com/',color:'sys-MC'},
+  {key:'RR',name:'Repair Report',list:'RR_Approvals',reqList:'RR_Requests',url:'https://mc.startruckkorea.com/',color:'sys-RR'},
 ];
 let _uniCache={};
 
@@ -1111,6 +1235,130 @@ async function loadUnifiedData(){
   body.innerHTML=html;
   const badge=document.getElementById('unif-badge');if(badge){badge.textContent=grandTotal;badge.style.display=grandTotal>0?'inline-block':'none';}
 }
+
+// ══════════════════════════════════════════
+// ── Repair Report (RR) 기능 ──
+// ══════════════════════════════════════════
+const RR_REQ = 'RR_Requests';
+const RR_APR = 'RR_Approvals';
+const RR_A2  = { name:'Junsoon Lee (TEST)', email:'jimmy.lee@hyosung.com', role:'2차결재자(관리자)', order:2 };
+
+function rrPopulateDepts(){
+  const sel=document.getElementById('rr-a1-dept');
+  if(!sel)return;
+  sel.innerHTML='<option value="">부서</option>';
+  [...new Set(employeeData.map(e=>e.dept))].sort().forEach(d=>{
+    const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);
+  });
+}
+
+async function rrSubmitForm(){
+  const vehicleModel=document.getElementById('rr-vehicle-model').value.trim();
+  const plateNumber=document.getElementById('rr-plate-number').value.trim();
+  const description=document.getElementById('rr-description').value.trim();
+  const accidentDate=document.getElementById('rr-accident-date').value;
+  const accidentType=document.getElementById('rr-accident-type').value;
+  const passengers=document.getElementById('rr-passengers').value.trim();
+  const location=document.getElementById('rr-location').value.trim();
+  const a1Email=document.getElementById('rr-a1-email').value;
+
+  if(!vehicleModel){alert('Vehicle Model을 입력해주세요.');return;}
+  if(!plateNumber){alert('Vehicle Plate Number를 입력해주세요.');return;}
+  if(!description){alert('Detailed Description of Accident를 입력해주세요.');return;}
+  if(!accidentDate){alert('Date of Accident를 입력해주세요.');return;}
+  if(!accidentType){alert('Accident Type을 선택해주세요.');return;}
+  if(!passengers){alert('Passenger(s) 정보를 입력해주세요.');return;}
+  if(!location){alert('Location of Accident를 입력해주세요.');return;}
+  if(!a1Email){alert('1차 결재자(Line Manager)를 지정해주세요.');return;}
+
+  const fileIds=['rr-att1','rr-att2','rr-att3','rr-att4','rr-att5'];
+  let totalMB=0;
+  for(const fid of fileIds){
+    const el=document.getElementById(fid);
+    if(el&&el.files[0]){
+      const mb=el.files[0].size/1024/1024;
+      if(mb>20){alert(el.files[0].name+'\n파일 크기('+mb.toFixed(1)+'MB)가 최대 허용 용량(20MB)을 초과합니다.');el.value='';return;}
+      totalMB+=mb;
+    }
+  }
+  if(totalMB>20){alert('첨부파일 전체 합계('+totalMB.toFixed(1)+'MB)가 최대 허용 용량(20MB)을 초과합니다.');return;}
+
+  const h=document.getElementById('rr-accident-h').value;
+  const ap=document.getElementById('rr-accident-ampm').value;
+  const accidentDateTime=accidentDate+' '+h+':00 '+ap;
+
+  loading(true);
+  try{
+    const now=new Date().toISOString();
+    const fields={
+      Title:'RR-'+now.slice(0,10)+' '+vehicleModel,
+      VehicleModel:vehicleModel, PlateNumber:plateNumber,
+      Description:description, AccidentDateTime:accidentDateTime,
+      AccidentType:accidentType, Passengers:passengers, Location:location,
+      Status:'대기', RequesterEmail:user.email, RequestDate:now,
+    };
+    const item=await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items','POST',{fields});
+    const reqId=parseInt(item.id);
+
+    // 파일 업로드
+    const allFiles=[];
+    fileIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.files.length)allFiles.push(...el.files);});
+    if(allFiles.length){
+      try{
+        const drivesData=await api('/sites/'+siteId+'/drives');
+        const drive=drivesData.value.find(d=>d.name==='AttachedFiles')||drivesData.value[0];
+        const t=await token();
+        const links=[];
+        for(const file of allFiles){
+          try{
+            const buf=await file.arrayBuffer();
+            const res=await fetch(GRAPH+'/drives/'+drive.id+'/root:/RR_Requests_AttachedFiles/'+reqId+'/'+encodeURIComponent(file.name)+':/content',
+              {method:'PUT',headers:{Authorization:'Bearer '+t,'Content-Type':file.type||'application/octet-stream'},body:buf});
+            if(res.ok){const u=await res.json();const safeKey=btoa(unescape(encodeURIComponent(drive.id+'###'+u.id)));links.push(file.name+'||ENC||'+safeKey);}
+          }catch(fe){console.error(fe);}
+        }
+        if(links.length)await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
+      }catch(fe){console.error(fe);}
+    }
+
+    // 결재자 등록
+    const a1Name=document.getElementById('rr-a1-name').value;
+    const approvers=[
+      {name:a1Name,email:a1Email,role:'1차결재자(Line Manager)',order:1},
+      RR_A2
+    ];
+    for(const a of approvers){
+      await api('/sites/'+siteId+'/lists/'+RR_APR+'/items','POST',{fields:{
+        Title:reqId+'-'+a.order, RequestID:reqId,
+        ApproverEmail:a.email, ApproverName:a.name,
+        ApproverRole:a.role, ApprovalOrder:a.order,
+        Status:a.order===1?'대기':'대기(잠김)'
+      }});
+    }
+    alert('✅ Repair Report가 제출되었습니다! (번호: '+reqId+')');
+    rrResetForm();
+    switchTab('list');
+  }catch(e){alert('오류: '+e.message);}
+  finally{loading(false);}
+}
+
+function rrResetForm(){
+  ['rr-vehicle-model','rr-plate-number','rr-description','rr-passengers','rr-location'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  document.getElementById('rr-desc-count').textContent='0';
+  document.getElementById('rr-accident-type').selectedIndex=0;
+  document.getElementById('rr-accident-date').value=new Date().toISOString().split('T')[0];
+  ['rr-att1','rr-att2','rr-att3','rr-att4','rr-att5'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('rr-a1-dept').selectedIndex=0;
+  document.getElementById('rr-a1-team').innerHTML='<option value="">팀</option>';
+  document.getElementById('rr-a1-team').disabled=true;
+  document.getElementById('rr-a1-person').innerHTML='<option value="">직원 선택</option>';
+  document.getElementById('rr-a1-person').disabled=true;
+  document.getElementById('rr-a1-name').value='';
+  document.getElementById('rr-a1-email').value='';
+}
+
 </script>
 </body>
 </html>
