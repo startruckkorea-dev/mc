@@ -315,8 +315,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="appr-block appr-fixed">
         <div class="appr-title">2차 결재자 <span class="hint">— CFO (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="Junsoon Lee (TEST)" readonly>
-          <input type="email" value="jimmy.lee@hyosung.com" readonly>
+          <input type="text" value="Martin Schindele" readonly>
+          <input type="email" value="martin.s.schindele@hyosung.com" readonly>
         </div>
       </div>
 
@@ -324,8 +324,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="appr-block appr-fixed">
         <div class="appr-title">3차 결재자 <span class="hint">— 관리자 (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="Junsoon Lee (TEST)" readonly>
-          <input type="email" value="jimmy.lee@hyosung.com" readonly>
+          <input type="text" value="Hye-jin Yoon" readonly>
+          <input type="email" value="hye-jin.yun@hyosung.com" readonly>
         </div>
       </div>
 
@@ -480,15 +480,15 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="appr-block appr-fixed">
         <div class="appr-title">2차 결재자 <span style="font-size:.7rem;font-weight:400;color:#605e5c">— CFO (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="Junsoon Lee (TEST)" readonly>
-          <input type="email" value="jimmy.lee@hyosung.com" readonly>
+          <input type="text" value="Martin Schindele" readonly>
+          <input type="email" value="martin.s.schindele@hyosung.com" readonly>
         </div>
       </div>
       <div class="appr-block appr-fixed">
         <div class="appr-title">3차 결재자 <span style="font-size:.7rem;font-weight:400;color:#605e5c">— 관리자 (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="Junsoon Lee (TEST)" readonly>
-          <input type="email" value="jimmy.lee@hyosung.com" readonly>
+          <input type="text" value="Hye-jin Yoon" readonly>
+          <input type="email" value="hye-jin.yun@hyosung.com" readonly>
         </div>
       </div>
 
@@ -567,8 +567,8 @@ const LIST_REQ   = 'MC_Requests';
 const LIST_APR   = 'MC_Approvals';
 const ADMIN_EMAILS = ['hye-jin.yun@hyosung.com','martin.s.schindele@hyosung.com'];
 
-const A2 = { name:'Junsoon Lee (TEST)', email:'jimmy.lee@hyosung.com', role:'2차결재자(CFO)', order:2 };
-const A3 = { name:'Junsoon Lee (TEST)', email:'jimmy.lee@hyosung.com', role:'3차결재자(관리자)', order:3 };
+const A2 = { name:'Martin Schindele', email:'martin.s.schindele@hyosung.com', role:'2차결재자(CFO)', order:2 };
+const A3 = { name:'Hye-jin Yoon', email:'hye-jin.yun@hyosung.com', role:'3차결재자(관리자)', order:3 };
 
 let msalApp=null, user=null, siteId=null, employeeData=[];
 
@@ -1278,8 +1278,8 @@ async function loadUnifiedData(){
 // ══════════════════════════════════════════
 const RR_REQ = 'RR_Requests';
 const RR_APR = 'RR_Approvals';
-const RR_A2  = { name:'Junsoon Lee (TEST)', email:'jimmy.lee@hyosung.com', role:'2차결재자(CFO)', order:2 };
-const RR_A3  = { name:'Junsoon Lee (TEST)', email:'jimmy.lee@hyosung.com', role:'3차결재자(관리자)', order:3 };
+const RR_A2  = { name:'Martin Schindele', email:'martin.s.schindele@hyosung.com', role:'2차결재자(CFO)', order:2 };
+const RR_A3  = { name:'Hye-jin Yoon', email:'hye-jin.yun@hyosung.com', role:'3차결재자(관리자)', order:3 };
 
 
 async function rrShowDetail(id){
