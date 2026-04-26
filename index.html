@@ -659,7 +659,8 @@ async function boot(account){
     await loadEmployees();
     await checkApprover();
     loadUnifiedBadge().catch(()=>{});
-    if(ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(user.email)){
+    const _adminCheck=(user.email||user.username||'').toLowerCase();
+    if(ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(_adminCheck)||ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((user.username||'').toLowerCase())){
       document.getElementById('tab-admin-btn').style.display='block';
     }
   }catch(e){ alert('SharePoint 연결 오류: '+e.message); }
