@@ -458,7 +458,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 
       <div class="section-title">3. Attachment</div>
       <div style="background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:9px 14px;margin-bottom:10px;font-size:.75rem;color:#0078d4">
-        📎 Please download and attach the <b>&lt;&lt;application form&gt;&gt;</b>. ※ Max 20MB per file / 20MB total
+        📎 Please download and attach the application form before submitting. &nbsp;<a href="#" onclick="rrDownloadTemplate();return false;" style="font-weight:700;color:#0078d4;text-decoration:underline;cursor:pointer">⬇ Download Template (03.Template_Damage Repair Report.xlsx)</a><br><span style="color:#605e5c;font-size:.72rem">※ Max 20MB per file / 20MB total</span>
       </div>
       <div class="file-row"><input type="file" id="rr-att1" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att1')">Reset</button></div>
       <div class="file-row"><input type="file" id="rr-att2" onchange="checkMcFileSize(this)"><button class="btn-file-reset" onclick="rf('rr-att2')">Reset</button></div>
@@ -1340,6 +1340,33 @@ async function rrSubmitForm(){
     switchTab('list');
   }catch(e){alert('오류: '+e.message);}
   finally{loading(false);}
+}
+
+
+async function rrDownloadTemplate(){
+  try{
+    const drivesData=await api('/sites/'+siteId+'/drives');
+    const docDrive=drivesData.value.find(d=>d.name==='문서')||drivesData.value[0];
+    const t=await token();
+    const res=await fetch(GRAPH+'/drives/'+docDrive.id+'/root:/03.Template_Damage Repair Report.xlsx?select=id,name,@microsoft.graph.downloadUrl',
+      {headers:{Authorization:'Bearer '+t}});
+    if(!res.ok)throw new Error('파일을 찾을 수 없습니다.');
+    const data=await res.json();
+    const dlUrl=data['@microsoft.graph.downloadUrl'];
+    if(dlUrl){
+      const a=document.createElement('a');
+      a.href=dlUrl;
+      a.download='03.Template_Damage Repair Report.xlsx';
+      a.style.display='none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      throw new Error('다운로드 URL을 가져올 수 없습니다.');
+    }
+  }catch(e){
+    alert('다운로드 오류: '+e.message);
+  }
 }
 
 function rrResetForm(){
