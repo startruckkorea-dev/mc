@@ -351,7 +351,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     <div class="card" style="padding:0;overflow:hidden">
       <table class="list-table">
         <thead><tr><th>번호</th><th>Company</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th></tr></thead>
-        <tbody id="list-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</td></tr></tbody>
+        <tbody id="list-body"></tbody>
       </table>
     </div>
     <div id="list-pagination"></div>
@@ -362,7 +362,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     <div class="card" style="padding:0;overflow:hidden">
       <table class="list-table">
         <thead><tr><th>신청번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
-        <tbody id="appr-body"><tr><td colspan="7" style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</td></tr></tbody>
+        <tbody id="appr-body"></tbody>
       </table>
     </div>
     <div id="appr-pagination"></div>
@@ -1064,7 +1064,7 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
 // ── Detail Modal ──
 async function showDetail(id){
   const modal=document.getElementById('detail-modal');
-  document.getElementById('modal-content').innerHTML='<div style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</div>';
+  document.getElementById('modal-content').innerHTML='';
   modal.className='open';
   try{
     const [r,apprData]=await Promise.all([
@@ -1220,7 +1220,7 @@ async function loadUnifiedBadge(){
   }));
   const badge=document.getElementById('unif-badge');if(badge){badge.textContent=total;badge.style.display=total>0?'inline-block':'none';}
 }
-async function openUnifiedAppr(){ document.getElementById('unified-modal').classList.add('open'); document.getElementById('unified-body').innerHTML='<div style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</div>'; await loadUnifiedData(); }
+async function openUnifiedAppr(){ document.getElementById('unified-modal').classList.add('open'); document.getElementById('unified-body').innerHTML=''; await loadUnifiedData(); }
 function closeUnifiedAppr(){ document.getElementById('unified-modal').classList.remove('open'); closeUniDetail(); }
 async function loadUnifiedData(){
   if(!siteId||!user)return;
@@ -1284,7 +1284,7 @@ const RR_A3  = { name:'Junsoon Lee (TEST)', email:'jimmy.lee@hyosung.com', role:
 
 async function rrShowDetail(id){
   const modal=document.getElementById('detail-modal');
-  document.getElementById('modal-content').innerHTML='<div style="text-align:center;padding:32px;color:#605e5c">불러오는 중...</div>';
+  document.getElementById('modal-content').innerHTML='';
   modal.className='open';
   try{
     const [r,apprData]=await Promise.all([
