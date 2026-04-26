@@ -371,6 +371,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
   <!-- 관리자 -->
   <div id="tab-admin" style="display:none">
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <select id="admin-type" onchange="loadAdminList()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
+        <option value="MC">🚗 Mobility Car</option>
+        <option value="RR">🔧 Repair Report</option>
+      </select>
       <select id="admin-status" onchange="loadAdminList()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
         <option value="">전체 상태</option><option>대기</option><option>승인완료</option><option>반려</option>
       </select>
@@ -382,8 +386,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <span style="font-size:.8rem;color:#605e5c;align-self:center" id="admin-count"></span>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
-      <table class="list-table">
-        <thead><tr><th>번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>운전자</th><th>상태</th><th>신청일</th></tr></thead>
+      <table class="list-table" id="admin-table">
+        <thead id="admin-thead"><tr><th>번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>운전자</th><th>상태</th><th>신청일</th></tr></thead>
         <tbody id="admin-body"></tbody>
       </table>
     </div>
@@ -1003,14 +1007,26 @@ async function checkApprover(){
 
 async function loadAdminList(){
   try{
-    const data=await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500');
+    const adminType=(document.getElementById('admin-type')||{}).value||'MC';
+    const listName=adminType==='RR'?RR_REQ:LIST_REQ;
+    const data=await api('/sites/'+siteId+'/lists/'+listName+'/items?$expand=fields&$top=500');
     const status=document.getElementById('admin-status').value;
     const dept=document.getElementById('admin-dept').value;
     let items=data.value.sort((a,b)=>b.id-a.id);
     if(status)items=items.filter(i=>i.fields.Status===status);
-    if(dept)items=items.filter(i=>i.fields.Department===dept);
-    document.getElementById('admin-count').textContent='총 '+items.length+'건';
-    pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.Department||''}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+
+    // 헤더 및 행 렌더러 분기
+    if(adminType==='RR'){
+      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>Vehicle Model</th><th>Plate No.</th><th>Accident Type</th><th>상태</th><th>신청일</th></tr>';
+      if(dept) items=items.filter(i=>i.fields.AccidentType===dept);
+      document.getElementById('admin-count').textContent='총 '+items.length+'건';
+      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="rrShowDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.VehicleModel||''}</td><td>${f.PlateNumber||''}</td><td>${f.AccidentType||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+    } else {
+      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>운전자</th><th>상태</th><th>신청일</th></tr>';
+      if(dept) items=items.filter(i=>i.fields.Department===dept);
+      document.getElementById('admin-count').textContent='총 '+items.length+'건';
+      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.Department||''}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+    }
   }catch(e){dynLoadEnd();}
 }
 
