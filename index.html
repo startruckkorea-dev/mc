@@ -178,13 +178,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
         <span id="user-name"></span>
         <button id="btn-logout" onclick="signOut()">로그아웃</button>
       </div>
-      <div class="unified-btn-wrap">
-        <button class="unified-appr-btn" onclick="openUnifiedAppr()" title="나의 통합 결재함">
-          <span>📬</span>
-          <span class="unif-badge" id="unif-badge"></span>
-        </button>
-        <span class="unif-btn-label">통합 결재함</span>
-      </div>
+      <a href="https://as.startruckkorea.com/" target="_blank" class="unified-appr-btn" title="통합 결재함" style="text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:1.3rem">📬</span><span class="unif-btn-label">통합 결재함</span></a>
     </div>
   </div>
 
@@ -527,8 +521,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 </div>
 
 <!-- 통합결재함 -->
-<div id="uni-detail-box" onclick="if(event.target===this)closeUniDetail()">
-  <div id="uni-detail-inner"></div>
 </div>
 <div id="unified-modal" onclick="if(event.target===this)closeUnifiedAppr()">
   <div class="unified-box">
