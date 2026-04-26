@@ -967,7 +967,10 @@ async function loadApprovalQueue(){
     const rrReqMap={};rrReq.value.forEach(r=>{rrReqMap[r.id]=r.fields;});
     const mcMine=mcAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').map(i=>({...i,_type:'MC'}));
     const rrMine=rrAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').map(i=>({...i,_type:'RR'}));
-    const mine=[...mcMine,...rrMine].sort((a,b)=>b.fields.RequestID-a.fields.RequestID);
+    // MC/RR 각각 RequestID가 별도 시퀀스이므로 RequestDate 기준으로 정렬 (최신 신청이 위)
+    const mcMineWithDate=mcMine.map(i=>({...i,_reqDate:new Date(mcReqMap[String(i.fields.RequestID)]?.RequestDate||0)}));
+    const rrMineWithDate=rrMine.map(i=>({...i,_reqDate:new Date(rrReqMap[String(i.fields.RequestID)]?.RequestDate||0)}));
+    const mine=[...mcMineWithDate,...rrMineWithDate].sort((a,b)=>b._reqDate-a._reqDate);
     // 헤더 업데이트
     document.querySelector('#tab-appr table thead tr').innerHTML='<th>신청번호</th><th>구분</th><th>신청자</th><th>요약</th><th>상태</th><th>신청일</th><th>처리</th>';
     const rows=mine.map(item=>{
