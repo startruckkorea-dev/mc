@@ -1040,16 +1040,16 @@ function showConfirm(apprId,action,reqId,type='MC'){
 function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); _pendingApproval=null; }
 async function confirmApproval(){
   if(!_pendingApproval)return;
-  const{apprId,action,reqId}=_pendingApproval;
+  const{apprId,action,reqId,type}=_pendingApproval; // closeConfirm 전에 type 먼저 꺼냄
   const comment=document.getElementById('confirm-comment').value.trim();
   if(action==='반려'&&!comment){alert('반려 사유를 입력해주세요.');return;}
-  closeConfirm();
-  await processApproval(apprId,action,reqId,comment);
+  closeConfirm(); // 이후 _pendingApproval = null 되므로 위에서 미리 꺼냄
+  await processApproval(apprId,action,reqId,comment,type);
   const uniModal=document.getElementById('unified-modal');
   if(uniModal&&uniModal.classList.contains('open'))setTimeout(()=>loadUnifiedData(),800);
 }
-async function processApproval(apprId,action,reqId,comment=''){
-  const type=(_pendingApproval&&_pendingApproval.type)||'MC';
+async function processApproval(apprId,action,reqId,comment='',type='MC'){
+  // type을 파라미터로 직접 받아서 처리 (_pendingApproval null 문제 해결)
   const aprList=type==='RR'?RR_APR:LIST_APR;
   const reqList=type==='RR'?RR_REQ:LIST_REQ;
   loading(true);
@@ -1059,7 +1059,8 @@ async function processApproval(apprId,action,reqId,comment=''){
       await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'반려'}});
     } else {
       const all=await api('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500');
-      const next=all.value.filter(i=>i.fields.RequestID===reqId&&(i.fields.Status||'').trim()==='대기(잠김)').sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+      // RequestID 타입 불일치 방지: 숫자로 통일해서 비교
+      const next=all.value.filter(i=>Number(i.fields.RequestID)===Number(reqId)&&(i.fields.Status||'').trim()==='대기(잠김)').sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
       if(next.length) await api('/sites/'+siteId+'/lists/'+aprList+'/items/'+next[0].id,'PATCH',{fields:{Status:'대기'}});
       else await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'승인완료'}});
     }
