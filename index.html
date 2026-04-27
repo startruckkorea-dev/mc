@@ -294,35 +294,21 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="section-title">5. 결재자 지정 (Approvers)</div>
       <div style="background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.75rem">
         <div style="font-weight:600;color:#0078d4;margin-bottom:4px">결재 라인</div>
-        <div>1차 Line Manager (선택) → 2차 CFO - Martin Schindele <span style="color:#0078d4">(고정)</span> → 3차 Hye-jin Yoon <span style="color:#0078d4">(고정)</span></div>
+        <div>1차 Martin Schindele (CFO) <span style="color:#0078d4">(고정)</span> → 2차 Hye-jin Yoon <span style="color:#0078d4">(고정)</span></div>
       </div>
 
-      <!-- 1차: Line Manager -->
-      <div class="appr-block">
-        <div class="appr-title">1차 결재자 <span class="req-mark">*</span> <span class="hint">— Line Manager (팀장)</span></div>
-        <div class="appr-grid">
-          <select id="a1-dept" onchange="onDeptChange(1)"><option value="">부서</option></select>
-          <select id="a1-team" onchange="onTeamChange(1)" disabled><option value="">팀</option></select>
-          <select id="a1-person" onchange="onPersonChange(1)" disabled><option value="">직원 선택</option></select>
-        </div>
-        <div class="appr-info">
-          <input type="text" id="a1-name" readonly placeholder="이름">
-          <input type="email" id="a1-email" readonly placeholder="이메일">
-        </div>
-      </div>
-
-      <!-- 2차: CFO (고정) -->
+      <!-- 1차: CFO (고정) -->
       <div class="appr-block appr-fixed">
-        <div class="appr-title">2차 결재자 <span class="hint">— CFO (자동 지정)</span></div>
+        <div class="appr-title">1차 결재자 <span class="hint">— CFO (자동 지정)</span></div>
         <div class="appr-info">
           <input type="text" value="Martin Schindele" readonly>
           <input type="email" value="martin.s.schindele@hyosung.com" readonly>
         </div>
       </div>
 
-      <!-- 3차: Hye-jin Yoon (고정) -->
+      <!-- 2차: Hye-jin Yoon (고정) -->
       <div class="appr-block appr-fixed">
-        <div class="appr-title">3차 결재자 <span class="hint">— 관리자 (자동 지정)</span></div>
+        <div class="appr-title">2차 결재자 <span class="hint">— 관리자 (자동 지정)</span></div>
         <div class="appr-info">
           <input type="text" value="Hye-jin Yoon" readonly>
           <input type="email" value="hye-jin.yun@hyosung.com" readonly>
@@ -811,13 +797,12 @@ async function submitForm(){
   const pickupDate=document.getElementById('f-pickup-date').value;
   const returnDate=document.getElementById('f-return-date').value;
   const driverName=document.getElementById('f-driver-name').value.trim();
-  const a1Email=document.getElementById('a1-email').value;
-
+  
   if(!dept){alert('Department를 선택해주세요.');return;}
   if(!purpose){alert('Purpose를 입력해주세요.');return;}
   if(!pickupDate||!returnDate){alert('사용 기간을 입력해주세요.');return;}
   if(!driverName){alert('운전자 정보를 입력해주세요.');return;}
-  if(!a1Email){alert('1차 결재자(Line Manager)를 지정해주세요.');return;}
+  // MC: Line Manager 없음, 결재자는 자동 지정
 
   // 파일 용량 체크
   const fileIds=['att1','att2','att3','att4','att5'];
@@ -876,11 +861,10 @@ async function submitForm(){
       }catch(fe){console.error(fe);}
     }
 
-    // 결재자 등록
-    const a1Name=document.getElementById('a1-name').value;
+    // 결재자 등록 (MC: CFO 1차, Hye-jin 2차)
     const approvers=[
-      {name:a1Name,email:a1Email,role:'1차결재자(Line Manager)',order:1},
-      A2, A3
+      {...A2, order:1, role:'1차결재자(CFO)'},
+      {...A3, order:2, role:'2차결재자(관리자)'},
     ];
     for(const a of approvers){
       await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items','POST',{fields:{
@@ -909,13 +893,7 @@ function resetForm(){
   document.getElementById('other-emp-search').style.display='none';
   document.getElementById('f-driver-name').readOnly=false;
   ['att1','att2','att3','att4','att5'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('a1-dept').selectedIndex=0;
-  document.getElementById('a1-team').innerHTML='<option value="">팀</option>';
-  document.getElementById('a1-team').disabled=true;
-  document.getElementById('a1-person').innerHTML='<option value="">직원 선택</option>';
-  document.getElementById('a1-person').disabled=true;
-  document.getElementById('a1-name').value='';
-  document.getElementById('a1-email').value='';
+  // MC: 결재자 자동 지정, 초기화 불필요
 }
 
 // ── Pagination ──
@@ -1391,7 +1369,7 @@ async function rrSubmitForm(){
   if(!accidentType){alert('Accident Type을 선택해주세요.');return;}
   if(!passengers){alert('Passenger(s) 정보를 입력해주세요.');return;}
   if(!location){alert('Location of Accident를 입력해주세요.');return;}
-  if(!a1Email){alert('1차 결재자(Line Manager)를 지정해주세요.');return;}
+  // MC: Line Manager 없음, 결재자는 자동 지정
 
   const fileIds=['rr-att1','rr-att2','rr-att3','rr-att4','rr-att5'];
   let totalMB=0;
