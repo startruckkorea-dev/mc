@@ -1585,12 +1585,12 @@ async function exportModalPdf() {
     // 이미지 첨부파일
     const fileLinks=contentEl.querySelectorAll('[data-drive],[class*="file-dl"]');
     for(const link of fileLinks){
-      const name=decodeURIComponent(link.dataset.name||link.getAttribute('data-name')||'');
+      const name=decodeURIComponent(link.getAttribute('data-name')||'');
       const ext=name.split('.').pop().toLowerCase();
       if(!['jpg','jpeg','png','gif','webp'].includes(ext)) continue;
       try{
-        const dId=decodeURIComponent(link.dataset.drive||'');
-        const iId=decodeURIComponent(link.dataset.id||'');
+        const dId=decodeURIComponent(link.getAttribute('data-drive')||'');
+        const iId=decodeURIComponent(link.getAttribute('data-id')||'');
         if(!dId||!iId) continue;
         const t=await (typeof token==='function'?token():getToken());
         const res=await fetch('https://graph.microsoft.com/v1.0/drives/'+dId+'/items/'+iId+'/content',{headers:{Authorization:'Bearer '+t}});
