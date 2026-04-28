@@ -1516,6 +1516,103 @@ function rrResetForm(){
   document.getElementById('rr-a1-email').value='';
 }
 
+
+// ── PDF 출력 ──
+async function exportModalPdf() {
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    alert('PDF 라이브러리 로딩 중입니다. 잠시 후 다시 시도해 주세요.'); return;
+  }
+  const btn = document.getElementById('btn-export-pdf');
+  const orig = btn.innerHTML; btn.innerHTML = '⏳ 생성 중...'; btn.disabled = true;
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 12, printW = pageW - margin * 2;
+
+    function makeHdr(left, right) {
+      const hc = document.createElement('canvas');
+      hc.width = 1190; hc.height = 30;
+      const hx = hc.getContext('2d');
+      const g = hx.createLinearGradient(0,0,hc.width,0);
+      g.addColorStop(0,'#0f2744'); g.addColorStop(1,'#0a4a8a');
+      hx.fillStyle=g; hx.fillRect(0,0,hc.width,hc.height);
+      hx.fillStyle='#3b82f6'; hx.fillRect(0,hc.height-2,hc.width,2);
+      hx.fillStyle='#fff';
+      hx.font='500 13px "Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif';
+      hx.textBaseline='middle'; hx.fillText(left,16,14);
+      hx.textAlign='right';
+      hx.font='400 12px "Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif';
+      hx.fillStyle='rgba(255,255,255,0.6)'; hx.fillText(right,hc.width-16,14);
+      return hc.toDataURL('image/png');
+    }
+
+    const _now = new Date();
+    const _ds = '출력일시: '+_now.toLocaleDateString('ko-KR')+' '+_now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+    const sysName = document.title||'STK';
+    const contentEl = document.getElementById('modal-content');
+
+    // 출력 배너 삽입
+    const banner = document.createElement('div');
+    banner.style.cssText='background:linear-gradient(90deg,#0f2744,#0a4a8a);color:#fff;padding:7px 14px;border-radius:8px;font-size:.78rem;font-weight:500;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;';
+    banner.innerHTML='<span>📄 결재 내역 증빙 자료 · '+sysName+'</span><span style="opacity:.75">'+_ds+'</span>';
+    contentEl.insertBefore(banner, contentEl.firstChild);
+
+    // 버튼류 임시 숨김
+    const hiddenEls = contentEl.querySelectorAll('.proc-btns,.btn-approve,.btn-reject,button');
+    hiddenEls.forEach(el=>{el._od=el.style.display;el.style.display='none';});
+
+    const cvs = await html2canvas(contentEl,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',scrollY:0,windowWidth:700});
+    banner.remove();
+    hiddenEls.forEach(el=>{el.style.display=el._od||'';});
+
+    const totalH=(cvs.height/cvs.width)*printW;
+    const imgData=cvs.toDataURL('image/jpeg',0.92);
+    const printableH=pageH-margin*2;
+    const pages=Math.ceil(totalH/printableH);
+
+    pdf.addImage(makeHdr(sysName+' · 결재 내역 증빙 자료',_ds),'PNG',0,0,pageW,8);
+    for(let i=0;i<pages;i++){
+      if(i>0){pdf.addPage();pdf.addImage(makeHdr(sysName+' · 결재 내역 증빙 자료',(i+1)+'/'+pages+' 페이지'),'PNG',0,0,pageW,8);}
+      const sy=i*printableH, sh=Math.min(printableH,totalH-sy);
+      pdf.addImage(imgData,'JPEG',margin,9-sy,printW,totalH,'p'+i,'FAST');
+      pdf.setFillColor(255,255,255);
+      pdf.rect(0,0,pageW,9,'F');pdf.rect(0,9+sh,pageW,pageH,'F');
+      pdf.rect(0,0,margin,pageH,'F');pdf.rect(pageW-margin,0,margin,pageH,'F');
+    }
+
+    // 이미지 첨부파일
+    const fileLinks=contentEl.querySelectorAll('[data-drive],[class*="file-dl"]');
+    for(const link of fileLinks){
+      const name=decodeURIComponent(link.dataset.name||link.getAttribute('data-name')||'');
+      const ext=name.split('.').pop().toLowerCase();
+      if(!['jpg','jpeg','png','gif','webp'].includes(ext)) continue;
+      try{
+        const dId=decodeURIComponent(link.dataset.drive||'');
+        const iId=decodeURIComponent(link.dataset.id||'');
+        if(!dId||!iId) continue;
+        const t=await (typeof token==='function'?token():getToken());
+        const res=await fetch('https://graph.microsoft.com/v1.0/drives/'+dId+'/items/'+iId+'/content',{headers:{Authorization:'Bearer '+t}});
+        if(!res.ok) continue;
+        const blob=await res.blob();
+        const dataUrl=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});
+        pdf.addPage();
+        pdf.addImage(makeHdr('첨부파일: '+name,_ds),'PNG',0,0,pageW,8);
+        const img=new Image();img.src=dataUrl;
+        await new Promise(r=>{img.onload=r;img.onerror=r;});
+        const iw=img.naturalWidth||800,ih=img.naturalHeight||600;
+        const ratio=Math.min((pageW-margin*2)/iw,(pageH-20)/ih);
+        pdf.addImage(dataUrl,ext.toUpperCase()==='JPG'?'JPEG':ext.toUpperCase(),margin,12,iw*ratio,ih*ratio);
+      }catch(e){console.warn('첨부파일 추가 실패:',name,e.message);}
+    }
+
+    const reqId=window._currentDetailId||'req';
+    pdf.save(sysName.replace(/\s/g,'_')+'_'+reqId+'_'+_now.toISOString().substring(0,10)+'.pdf');
+  }catch(e){alert('PDF 생성 오류: '+e.message);}
+  finally{btn.innerHTML=orig;btn.disabled=false;}
+}
+
 </script>
 </body>
 </html>
