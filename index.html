@@ -700,6 +700,7 @@ async function loadEmployees(){
 
 function populateDepts(idx){
   const sel=document.getElementById('a'+idx+'-dept');
+  if(!sel) return;
   sel.innerHTML='<option value="">부서</option>';
   [...new Set(employeeData.map(e=>e.dept))].sort().forEach(d=>{
     const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);
