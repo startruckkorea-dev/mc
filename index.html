@@ -644,7 +644,7 @@ async function loadSystemConfig() {
   try {
     const t = await token();
     const drivesRes = await api('/sites/' + siteId + '/drives');
-    let docDrive = (drivesRes.value || []).find(d => d.name === 'Documents' || d.name === '문서');
+    let docDrive = (drivesRes.value || []).find(d => ['Documents','문서','Shared Documents'].includes(d.name));
     if (!docDrive && drivesRes.value && drivesRes.value.length) docDrive = drivesRes.value[0];
     const res = await fetch(GRAPH + '/drives/' + docDrive.id + '/root:/system_config_final.xlsx:/content',
       { headers: { Authorization: 'Bearer ' + t } });
