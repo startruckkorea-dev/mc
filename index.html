@@ -672,7 +672,19 @@ function cfgVal(cfg, key, defaultObj) {
   return { ...defaultObj, name: v.name || defaultObj.name, email: v.email || defaultObj.email };
 }
 function cfgEmails(cfg, keys) {
-  return keys.map(k => (cfg && cfg[k] ? cfg[k].email : '')).filter(Boolean);
+  // _ADMIN_N 패턴 키는 cfg에 존재하는 모든 번호까지 자동 포함
+  const expanded = [];
+  keys.forEach(k => {
+    const match = k.match(/^(.+_ADMIN_)[0-9]+$/);
+    if (match) {
+      const prefix = match[1];
+      let n = 1;
+      while (cfg && cfg[prefix + n]) { expanded.push(prefix + n); n++; }
+    } else {
+      expanded.push(k);
+    }
+  });
+  return [...new Set(expanded)].map(k => (cfg && cfg[k] ? cfg[k].email : '')).filter(Boolean);
 }
 
 async function boot(account){
