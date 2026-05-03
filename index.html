@@ -637,7 +637,7 @@ function fmtDate(s){ if(!s)return''; const d=new Date(s); return d.getFullYear()
 
 // ── Boot ──
 
-// ── System Config from SharePoint (system_config.xlsx) ──
+// ── System Config from SharePoint (system_config_final.xlsx) ──
 let _sysConfig = null;
 async function loadSystemConfig() {
   if (_sysConfig) return _sysConfig;
@@ -646,9 +646,9 @@ async function loadSystemConfig() {
     const drivesRes = await api('/sites/' + siteId + '/drives');
     let docDrive = (drivesRes.value || []).find(d => d.name === 'Documents' || d.name === '문서');
     if (!docDrive && drivesRes.value && drivesRes.value.length) docDrive = drivesRes.value[0];
-    const res = await fetch(GRAPH + '/drives/' + docDrive.id + '/root:/system_config.xlsx:/content',
+    const res = await fetch(GRAPH + '/drives/' + docDrive.id + '/root:/system_config_final.xlsx:/content',
       { headers: { Authorization: 'Bearer ' + t } });
-    if (!res.ok) throw new Error('system_config.xlsx not found');
+    if (!res.ok) throw new Error('system_config_final.xlsx not found');
     const buf = await res.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
@@ -659,10 +659,10 @@ async function loadSystemConfig() {
       cfg[key] = { name: (row[1] || '').toString().trim(), email: (row[2] || '').toString().trim() };
     });
     _sysConfig = cfg;
-    console.log('[Config] Loaded system_config.xlsx:', Object.keys(cfg).length, 'entries');
+    console.log('[Config] Loaded system_config_final.xlsx:', Object.keys(cfg).length, 'entries');
     return cfg;
   } catch(e) {
-    console.warn('[Config] system_config.xlsx 로드 실패, 기본값 사용:', e.message);
+    console.warn('[Config] system_config_final.xlsx 로드 실패, 기본값 사용:', e.message);
     return null;
   }
 }
