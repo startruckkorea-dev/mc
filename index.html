@@ -713,10 +713,11 @@ async function boot(account){
       Object.assign(RR_A2, cfgVal(_cfg,'MC_CFO',RR_A2));
       Object.assign(RR_A3, cfgVal(_cfg,'MC_ADMIN_APPROVER',RR_A3));
       // MC 신청서 고정 결재자 UI 업데이트
-      document.querySelectorAll('[data-mc="cfo-name"]').forEach(el=>el.value=A2.name);
-      document.querySelectorAll('[data-mc="cfo-email"]').forEach(el=>el.value=A2.email);
-      document.querySelectorAll('[data-mc="admin-name"]').forEach(el=>el.value=A3.name);
-      document.querySelectorAll('[data-mc="admin-email"]').forEach(el=>el.value=A3.email);
+      [['cfg-mc-cfo-name',A2.name],  ['cfg-mc-cfo-email',A2.email],
+       ['cfg-mc-admin-name',A3.name],['cfg-mc-admin-email',A3.email],
+       ['cfg-rr-cfo-name',RR_A2.name],  ['cfg-rr-cfo-email',RR_A2.email],
+       ['cfg-rr-admin-name',RR_A3.name],['cfg-rr-admin-email',RR_A3.email],
+      ].forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
     }
     await loadEmployees();
     await checkApprover();
