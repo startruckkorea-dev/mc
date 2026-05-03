@@ -704,14 +704,14 @@ async function boot(account){
     siteId=site.id;
     const _cfg = await loadSystemConfig();
     if (_cfg) {
-      const _contact = cfgVal(_cfg,'CONTACT_EMAIL',{email:'hye-jin.yun@hyosung.com'});
+      const _contact = cfgVal(_cfg,'MC_CONTACT',cfgVal(_cfg,'CONTACT_EMAIL',{email:'hye-jin.yun@hyosung.com'}));
       document.querySelectorAll('.sub,.subtitle').forEach(el=>{if(el.textContent.includes('@'))el.textContent='문의 Email: '+_contact.email;});
-      const _adminList = cfgEmails(_cfg,['ADMIN_1','SCC_CFO','ADMIN_SP']);
+      const _adminList = cfgEmails(_cfg,['MC_ADMIN_1','MC_ADMIN_2','ADMIN_SP']);
       if(_adminList.length) ADMIN_EMAILS.splice(0,ADMIN_EMAILS.length,..._adminList);
-      Object.assign(A2,    cfgVal(_cfg,'SCC_CFO',    A2));
-      Object.assign(A3,    cfgVal(_cfg,'MC_ADMIN',   A3));
-      Object.assign(RR_A2, cfgVal(_cfg,'SCC_CFO',    RR_A2));
-      Object.assign(RR_A3, cfgVal(_cfg,'MC_ADMIN',   RR_A3));
+      Object.assign(A2,    cfgVal(_cfg,'MC_CFO',A2));
+      Object.assign(A3,    cfgVal(_cfg,'MC_ADMIN_APPROVER',A3));
+      Object.assign(RR_A2, cfgVal(_cfg,'MC_CFO',RR_A2));
+      Object.assign(RR_A3, cfgVal(_cfg,'MC_ADMIN_APPROVER',RR_A3));
       // MC 신청서 고정 결재자 UI 업데이트
       document.querySelectorAll('[data-mc="cfo-name"]').forEach(el=>el.value=A2.name);
       document.querySelectorAll('[data-mc="cfo-email"]').forEach(el=>el.value=A2.email);
