@@ -229,14 +229,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
           <label>Department <span class="req-mark">*</span></label>
           <select id="f-dept">
             <option value="">-- Choice Department --</option>
-            <option>Sales</option>
-            <option>Marketing/CEO office</option>
-            <option>F&amp;C</option>
-            <option>CSP</option>
-            <option>PTB</option>
-            <option>PMM</option>
-            <option>Unimog</option>
-            <option>ND</option>
           </select>
         </div>
       </div>
@@ -322,17 +314,17 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="appr-block appr-fixed">
         <div class="appr-title">1차 결재자 <span class="hint">— CFO (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="" readonly>
-          <input type="email" value="" readonly>
+          <input type="text" id="cfg-mc-cfo-name" value="" readonly>
+          <input type="email" id="cfg-mc-cfo-email" value="" readonly>
         </div>
       </div>
 
-      <!-- 2차: Hye-jin Yoon (고정) -->
+      <!-- 2차: 관리자 (고정) -->
       <div class="appr-block appr-fixed">
         <div class="appr-title">2차 결재자 <span class="hint">— 관리자 (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="" readonly>
-          <input type="email" value="" readonly>
+          <input type="text" id="cfg-mc-admin-name" value="" readonly>
+          <input type="email" id="cfg-mc-admin-email" value="" readonly>
         </div>
       </div>
 
@@ -491,15 +483,15 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="appr-block appr-fixed">
         <div class="appr-title">2차 결재자 <span style="font-size:.7rem;font-weight:400;color:#605e5c">— CFO (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="" readonly>
-          <input type="email" value="" readonly>
+          <input type="text" id="cfg-rr-cfo-name" value="" readonly>
+          <input type="email" id="cfg-rr-cfo-email" value="" readonly>
         </div>
       </div>
       <div class="appr-block appr-fixed">
         <div class="appr-title">3차 결재자 <span style="font-size:.7rem;font-weight:400;color:#605e5c">— 관리자 (자동 지정)</span></div>
         <div class="appr-info">
-          <input type="text" value="" readonly>
-          <input type="email" value="" readonly>
+          <input type="text" id="cfg-rr-admin-name" value="" readonly>
+          <input type="email" id="cfg-rr-admin-email" value="" readonly>
         </div>
       </div>
 
@@ -759,11 +751,27 @@ async function loadEmployees(){
     employeeData=rows.map(r=>({dept:r['Department']||'',team:r['Team']||'',name:r['EngName']||'',email:(r['EMail']||r['email']||'')})).filter(r=>r.email&&r.name);
     populateDepts(1);
     rrPopulateDepts();
+    // 신청서 Department 드롭다운 채우기 (employee_search.xlsx 기준)
+    const depts = [...new Set(employeeData.map(e=>e.dept))].filter(Boolean).sort();
+    const fDept = document.getElementById('f-dept');
+    if (fDept) {
+      fDept.innerHTML = '<option value="">-- Choice Department --</option>';
+      depts.forEach(d=>{ const o=document.createElement('option');o.value=d;o.textContent=d;fDept.appendChild(o); });
+    }
+    // 관리자 필터 드롭다운도 채우기
+    const adminDept = document.getElementById('admin-dept');
+    if (adminDept) {
+      const curVal = adminDept.value;
+      adminDept.innerHTML = '<option value="">전체 부서</option>';
+      depts.forEach(d=>{ const o=document.createElement('option');o.value=d;o.textContent=d;adminDept.appendChild(o); });
+      adminDept.value = curVal;
+    }
     // 운전자 드롭다운도 채우기
     const drvDept=document.getElementById('drv-dept-sel');
-    [...new Set(employeeData.map(e=>e.dept))].sort().forEach(d=>{
-      const o=document.createElement('option');o.value=d;o.textContent=d;drvDept.appendChild(o);
-    });
+    if (drvDept) {
+      drvDept.innerHTML = '<option value="">부서</option>';
+      depts.forEach(d=>{ const o=document.createElement('option');o.value=d;o.textContent=d;drvDept.appendChild(o); });
+    }
   }catch(e){ console.warn('직원 데이터 로드 실패:',e); }
 }
 
