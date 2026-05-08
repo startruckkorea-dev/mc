@@ -772,6 +772,13 @@ async function loadEmployees(){
       drvDept.innerHTML = '<option value="">부서</option>';
       depts.forEach(d=>{ const o=document.createElement('option');o.value=d;o.textContent=d;drvDept.appendChild(o); });
     }
+    // 로드 완료 후: 이미 체크된 경우 부서 자동 채우기 (타이밍 문제 해결)
+    const _myEmp=employeeData.find(e=>(e.email||'').toLowerCase()===(user.email||'').toLowerCase());
+    if(_myEmp){
+      if(document.getElementById('same-as-requester')?.checked){
+        document.getElementById('f-driver-dept').value=_myEmp.dept;
+      }
+    }
   }catch(e){ console.warn('직원 데이터 로드 실패:',e); }
 }
 
