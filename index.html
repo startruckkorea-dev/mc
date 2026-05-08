@@ -971,7 +971,7 @@ async function submitForm(){
         if(links.length)await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
       }catch(fe){console.error(fe);}
     }
-    await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'MC-'+new Date().toISOString().slice(0,10)+'-'+reqId}});
+    await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'MC-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId}});
 
     // 결재자 등록 (MC: CFO 1차, Hye-jin 2차)
     const approvers=[
@@ -1532,7 +1532,7 @@ async function rrSubmitForm(){
         if(links.length)await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
       }catch(fe){console.error(fe);}
     }
-    await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'RR-'+new Date().toISOString().slice(0,10)+'-'+reqId}});
+    await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'RR-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId}});
 
     // 결재자 등록
     const a1Name=document.getElementById('rr-a1-name').value;
