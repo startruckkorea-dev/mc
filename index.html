@@ -822,12 +822,17 @@ function fillRequesterAsDriver(){
   document.getElementById('other-employee').checked=false;
   document.getElementById('other-emp-search').style.display='none';
   if(checked){
+    // employeeData에서 이메일로 부서 검색
+    const _emp=employeeData.find(e=>(e.email||'').toLowerCase()===(user.email||'').toLowerCase());
     document.getElementById('f-driver-name').value=user.name||'';
-    document.getElementById('f-driver-dept').value='';
+    document.getElementById('f-driver-dept').value=_emp?_emp.dept:'';
     document.getElementById('f-driver-name').readOnly=true;
+    document.getElementById('f-driver-dept').readOnly=true;
   } else {
     document.getElementById('f-driver-name').value='';
+    document.getElementById('f-driver-dept').value='';
     document.getElementById('f-driver-name').readOnly=false;
+    document.getElementById('f-driver-dept').readOnly=false;
   }
 }
 function toggleOtherEmployee(){
