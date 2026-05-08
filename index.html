@@ -938,7 +938,7 @@ async function submitForm(){
   try{
     const now=new Date().toISOString();
     const fields={
-      Title:'MC-'+now.slice(0,10)+' '+dept,
+      Title:'MC-tmp',
       Company:company, Department:dept,
       CarModel:document.getElementById('f-carmodel').value,
       CarNumber:document.getElementById('f-carnum').value,
@@ -971,6 +971,7 @@ async function submitForm(){
         if(links.length)await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
       }catch(fe){console.error(fe);}
     }
+    await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'MC-'+new Date().toISOString().slice(0,10)+'-'+reqId}});
 
     // 결재자 등록 (MC: CFO 1차, Hye-jin 2차)
     const approvers=[
@@ -1502,7 +1503,7 @@ async function rrSubmitForm(){
   try{
     const now=new Date().toISOString();
     const fields={
-      Title:'RR-'+now.slice(0,10)+' '+vehicleModel,
+      Title:'RR-tmp',
       VehicleModel:vehicleModel, PlateNumber:plateNumber,
       Description:description, AccidentDateTime:accidentDateTime,
       AccidentType:accidentType, Passengers:passengers, Location:location,
@@ -1531,6 +1532,7 @@ async function rrSubmitForm(){
         if(links.length)await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
       }catch(fe){console.error(fe);}
     }
+    await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'RR-'+new Date().toISOString().slice(0,10)+'-'+reqId}});
 
     // 결재자 등록
     const a1Name=document.getElementById('rr-a1-name').value;
