@@ -630,7 +630,7 @@ async function apiAll(path) {
 // ApproverEmail 인덱싱 → 서버사이드 필터로 빠르게 조회
 async function apiMyApprovals(listPath, myEmail) {
   const encoded = encodeURIComponent(myEmail);
-  const url = listPath + "?$expand=fields&$filter=fields/ApproverEmail eq '" + encoded + "'&$top=999";
+  const url = listPath + "/items?$expand=fields&$filter=ApproverEmail eq '" + myEmail + "'&$top=999";
   return apiAll(url);
 }
 async function api(path,method='GET',body=null){
