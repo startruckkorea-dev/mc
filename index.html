@@ -617,7 +617,7 @@ async function token(){
   }
 }
 
-// ── 페이지네이션 전체 조회 헬퍼 (기존 .value 접근 호환) ──
+// ── 페이지네이션 전체 조회 헬퍼 ──
 async function apiAll(path) {
   let items = [], url = path;
   while(url) {
@@ -626,6 +626,12 @@ async function apiAll(path) {
     url = d['@odata.nextLink'] ? d['@odata.nextLink'].replace('https://graph.microsoft.com/v1.0','') : null;
   }
   return {value: items};
+}
+// ApproverEmail 인덱싱 → 서버사이드 필터로 빠르게 조회
+async function apiMyApprovals(listPath, myEmail) {
+  const encoded = encodeURIComponent(myEmail);
+  const url = listPath + "?$expand=fields&$filter=fields/ApproverEmail eq '" + encoded + "'&$top=999";
+  return apiAll(url);
 }
 async function api(path,method='GET',body=null){
   const t=await token();
@@ -1065,11 +1071,12 @@ async function loadMyList(){
 async function loadApprovalQueue(){
   try{
     const myEmail=(user.email||'').toLowerCase();
+    const myEmailF = user.email||user.username||'';
     const [mcAppr,mcReq,rrAppr,rrReq]=await Promise.all([
-      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
+      apiMyApprovals('/sites/'+siteId+'/lists/'+LIST_APR, myEmailF),
+      api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=999'),
+      apiMyApprovals('/sites/'+siteId+'/lists/'+RR_APR, myEmailF),
+      api('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=999'),
     ]);
     const mcReqMap={};mcReq.value.forEach(r=>{mcReqMap[r.id]=r.fields;});
     const rrReqMap={};rrReq.value.forEach(r=>{rrReqMap[r.id]=r.fields;});
