@@ -1052,12 +1052,11 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     const all=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트
-    document.querySelector('#tab-list table thead tr').innerHTML='<th>번호</th><th>구분</th><th>요약</th><th>상태</th><th>신청일</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th>번호</th><th>구분</th><th>제목</th><th>상태</th><th>신청일</th>';
     pgSet('list',all,item=>{
       const f=item.fields,type=item._type;
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
-      const rf2=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
-      const summary=rf2.Title||'';
+      const summary=f.Title||'';
       return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${item.id}</td><td>${badge}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;
     }, '신청 내역이 없습니다.', 5);
   }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="5" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
@@ -1081,7 +1080,7 @@ async function loadApprovalQueue(){
     const rrMineWithDate=rrMine.map(i=>({...i,_reqDate:new Date(rrReqMap[String(i.fields.RequestID)]?.RequestDate||0)}));
     const mine=[...mcMineWithDate,...rrMineWithDate].sort((a,b)=>b._reqDate-a._reqDate);
     // 헤더 업데이트
-    document.querySelector('#tab-appr table thead tr').innerHTML='<th>신청번호</th><th>구분</th><th>신청자</th><th>요약</th><th>상태</th><th>신청일</th><th>처리</th>';
+    document.querySelector('#tab-appr table thead tr').innerHTML='<th>신청번호</th><th>구분</th><th>신청자</th><th>제목</th><th>상태</th><th>신청일</th><th>처리</th>';
     const rows=mine.map(item=>{
       const f=item.fields,type=item._type;
       const rf=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
