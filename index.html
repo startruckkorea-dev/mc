@@ -1160,9 +1160,9 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
     if(action==='반려'){
       await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'반려'}});
     } else {
-      const all=await api('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500');
+      const all=await api('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+reqId);
       // RequestID 타입 불일치 방지: 숫자로 통일해서 비교
-      const next=all.value.filter(i=>Number(i.fields.RequestID)===Number(reqId)&&(i.fields.Status||'').trim()==='대기(잠김)').sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+      const next=all.value.filter(i=>(i.fields.Status||'').trim()==='대기(잠김)').sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
       if(next.length) await api('/sites/'+siteId+'/lists/'+aprList+'/items/'+next[0].id,'PATCH',{fields:{Status:'대기'}});
       else await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'승인완료'}});
     }
