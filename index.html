@@ -636,7 +636,7 @@ async function api(path,method='GET',body=null){
   return res.status===204?null:res.json();
 }
 function loading(on){ document.getElementById('loading').className=on?'show':''; }
-function fmtDate(s){ if(!s)return''; const d=new Date(s); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function fmtDate(s){ if(!s)return''; const d=new Date(new Date(s).getTime()+9*3600*1000); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0'); }
 
 // ── Boot ──
 
