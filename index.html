@@ -81,6 +81,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .btn-secondary:hover{background:#f3f2f1}
 /* List */
 .list-table{width:100%;border-collapse:collapse;font-size:.82rem}
+#tab-admin .list-table{min-width:960px}
+#tab-admin .card{overflow-x:auto}
 .list-table th{padding:9px 12px;text-align:left;background:#f3f2f1;border-bottom:1px solid #edebe9;font-weight:600;color:#323130;font-size:.75rem}
 .list-table td{padding:9px 12px;border-bottom:1px solid #edebe9;color:#323130}
 .list-table tr:hover td{background:#f9f8f7;cursor:pointer}
@@ -387,7 +389,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <table class="list-table" id="admin-table">
-        <thead id="admin-thead"><tr><th>번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>운전자</th><th>상태</th><th>신청일</th></tr></thead>
+        <thead id="admin-thead"><tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th>신청일</th></tr></thead>
         <tbody id="admin-body"></tbody>
       </table>
     </div>
@@ -907,6 +909,8 @@ function switchTab(t){
     const btn=document.getElementById('tab-'+n+'-btn');
     if(btn)btn.classList.toggle('active',n===t);
   });
+  const appEl=document.getElementById('app');
+  if(appEl)appEl.style.maxWidth=t==='admin'?'1280px':'960px';
   if(t==='list'){dynLoadStart('신청 목록 불러오는 중');loadMyList();}
   if(t==='appr'){dynLoadStart('결재 정보 확인 중');loadApprovalQueue();}
   if(t==='admin'){dynLoadStart('전체 신청 불러오는 중');loadAdminList();}
@@ -1128,10 +1132,10 @@ async function loadAdminList(){
       document.getElementById('admin-count').textContent='총 '+items.length+'건';
       pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="rrShowDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.VehicleModel||''}</td><td>${f.PlateNumber||''}</td><td>${f.AccidentType||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
     } else {
-      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>운전자</th><th>상태</th><th>신청일</th></tr>';
+      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th>신청일</th></tr>';
       if(dept) items=items.filter(i=>i.fields.Department===dept);
       document.getElementById('admin-count').textContent='총 '+items.length+'건';
-      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.Department||''}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td style="color:#0078d4;font-weight:600">${item.id}</td><td style="font-size:.78rem">${f.RequesterEmail||''}</td><td style="font-size:.78rem;color:#0078d4">${f.Title||'-'}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td>${f.Department||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',8);
     }
   }catch(e){dynLoadEnd();}
 }
