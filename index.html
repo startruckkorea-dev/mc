@@ -1601,17 +1601,19 @@ async function rrSubmitForm(){
 async function rrDownloadTemplate(){
   try{
     const drivesData=await api('/sites/'+siteId+'/drives');
-    const docDrive=drivesData.value.find(d=>d.name==='문서')||drivesData.value[0];
+    const docDrive=drivesData.value.find(d=>['Documents','문서','Shared Documents'].includes(d.name))||drivesData.value.find(d=>d.driveType==='documentLibrary')||drivesData.value[0];
     const t=await token();
-    const res=await fetch(GRAPH+'/drives/'+docDrive.id+'/root:/03.Template_Damage Repair Report.xlsx?select=id,name,@microsoft.graph.downloadUrl',
+    const fileName='03.Template_Damage Repair Report.xlsx';
+    const encodedName=encodeURIComponent(fileName);
+    const res=await fetch(GRAPH+'/drives/'+docDrive.id+'/root:/'+encodedName+'?select=id,name,@microsoft.graph.downloadUrl',
       {headers:{Authorization:'Bearer '+t}});
-    if(!res.ok)throw new Error('파일을 찾을 수 없습니다.');
+    if(!res.ok) throw new Error('Access denied - 파일 권한을 확인해주세요. ('+res.status+')');
     const data=await res.json();
     const dlUrl=data['@microsoft.graph.downloadUrl'];
     if(dlUrl){
       const a=document.createElement('a');
       a.href=dlUrl;
-      a.download='03.Template_Damage Repair Report.xlsx';
+      a.download=fileName;
       a.style.display='none';
       document.body.appendChild(a);
       a.click();
