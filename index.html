@@ -602,7 +602,7 @@ window.addEventListener('load', async () => {
   try {
     const inst = await msal.PublicClientApplication.createPublicClientApplication({
       auth: { clientId:CLIENT_ID, authority:'https://login.microsoftonline.com/'+TENANT_ID, redirectUri:window.location.origin+window.location.pathname },
-      cache: { cacheLocation:'localStorage' }
+      cache: { cacheLocation:'sessionStorage' }
     });
     msalApp = inst;
     const resp = await msalApp.handleRedirectPromise();
