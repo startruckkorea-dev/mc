@@ -626,6 +626,44 @@ async function signIn(){
   }catch(e){ document.getElementById('login-err').textContent=e.message; document.getElementById('login-err').style.display='block'; }
 }
 document.getElementById('btn-login').onclick = signIn;
+
+// ── 비활동 자동 로그아웃 (12시간) ──────────────────
+const IDLE_TIMEOUT_MS = 12 * 60 * 60 * 1000; // 12시간
+const IDLE_KEY = 'stk_last_active';
+let _idleTimer = null;
+
+function resetIdleTimer() {
+  sessionStorage.setItem(IDLE_KEY, Date.now().toString());
+  if (_idleTimer) clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(() => {
+    alert('장시간 미사용으로 자동 로그아웃됩니다.');
+    if (typeof msalApp !== 'undefined' && msalApp) {
+      sessionStorage.removeItem(IDLE_KEY);
+      msalApp.logoutRedirect();
+    }
+  }, IDLE_TIMEOUT_MS);
+}
+
+function checkIdleOnLoad() {
+  const last = parseInt(sessionStorage.getItem(IDLE_KEY) || '0');
+  if (last && Date.now() - last > IDLE_TIMEOUT_MS) {
+    sessionStorage.removeItem(IDLE_KEY);
+    if (typeof msalApp !== 'undefined' && msalApp) {
+      msalApp.logoutRedirect();
+    }
+    return false;
+  }
+  return true;
+}
+
+function startIdleWatcher() {
+  resetIdleTimer();
+  ['click', 'keydown', 'mousemove', 'touchstart', 'scroll'].forEach(evt =>
+    document.addEventListener(evt, resetIdleTimer, { passive: true })
+  );
+}
+// ────────────────────────────────────────────────────
+
 function signOut(){ msalApp.logoutRedirect(); }
 
 async function token(){
@@ -712,6 +750,8 @@ function cfgEmails(cfg, keys) {
 }
 
 async function boot(account){
+  if (!checkIdleOnLoad()) return;
+  startIdleWatcher();
   user=account;
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
