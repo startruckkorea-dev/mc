@@ -1110,7 +1110,7 @@ async function loadApprovalQueue(){
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
       const summary=rf.Title||'';
       const detailFn=type==='RR'?'rrShowDetail':'showDetail';
-      return`<tr><td style="color:#0078d4;cursor:pointer" onclick="${detailFn}(${f.RequestID})">${f.RequestID}</td><td>${badge}</td><td style="font-size:.78rem">${rf.RequesterEmail||''}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDate(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
+      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${f.RequestID}</td><td>${badge}</td><td style="font-size:.78rem">${rf.RequesterEmail||''}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDate(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
     });
     dynLoadEnd();
     pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',7);
