@@ -82,12 +82,13 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 /* List */
 .list-table{width:100%;border-collapse:collapse;font-size:.82rem}
 .list-table tbody tr[onclick]{cursor:pointer}
+.list-table tbody tr[onclick] td{cursor:pointer;pointer-events:auto}
 .list-table tbody tr[onclick]:hover{background:#f0f6ff}
 #tab-admin .list-table{min-width:960px}
 #tab-admin .card{overflow-x:auto}
 .list-table th{padding:9px 12px;text-align:left;background:#f3f2f1;border-bottom:1px solid #edebe9;font-weight:600;color:#323130;font-size:.75rem}
 .list-table td{padding:9px 12px;border-bottom:1px solid #edebe9;color:#323130}
-.list-table tr:hover td{background:#f9f8f7;cursor:pointer}
+.list-table tr:hover td{background:#f9f8f7;cursor:pointer;cursor:pointer}
 .badge-type{background:#e1f0ff;color:#0078d4;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
 .badge-대기{background:#fff4ce;color:#7d5700;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
 .badge-승인완료{background:#dff6dd;color:#107c10;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
