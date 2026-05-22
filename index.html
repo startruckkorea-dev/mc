@@ -398,8 +398,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
         <option>Sales</option><option>Marketing/CEO office</option><option>F&C</option>
         <option>CSP</option><option>PTB</option><option>PMM</option><option>Unimog</option><option>ND</option>
       </select>
-      <span style="font-size:.8rem;color:#605e5c;align-self:center" id="admin-count"></span>
-      <button onclick="exportMCAdminExcel()" style="margin-left:auto;padding:6px 14px;background:#107c10;color:#fff;border:none;border-radius:4px;font-size:.82rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px"><span>📊</span> Excel 내보내기</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+        <span style="font-size:.82rem;color:#605e5c;font-weight:500" id="admin-count"></span>
+        <button onclick="exportMCAdminExcel()" style="padding:6px 14px;background:#107c10;color:#fff;border:none;border-radius:4px;font-size:.82rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px"><span>📊</span> Excel 내보내기</button>
+      </div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <table class="list-table" id="admin-table">
