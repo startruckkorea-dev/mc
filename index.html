@@ -929,7 +929,7 @@ function checkMcFileSize(input){
 
 // ── Tab ──
 function switchTab(t){
-  if (name === 'admin' || t === 'admin') {
+  if (t === 'admin') {
     const _emails = typeof ADMIN_EMAILS !== 'undefined' ? ADMIN_EMAILS : [];
     const _user = typeof user !== 'undefined' ? user : null;
     const _isAdmin = _user && _emails.map(e=>e.toLowerCase()).includes((_user.username||'').toLowerCase());
