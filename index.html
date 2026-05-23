@@ -722,7 +722,7 @@ async function boot(account){
   user=account;
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='block';
-  document.getElementById('user-name').textContent=account.name||account.username;
+  document.getElementById('user-name').textContent=(account.name||account.username)+' ('+(account.username)+')'
   try{
     const me=await api('/me?$select=mail,userPrincipalName');
     user.email=(me.mail||me.userPrincipalName||account.username).toLowerCase();
