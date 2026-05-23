@@ -597,6 +597,7 @@ const SCOPES     = ['User.Read','Sites.ReadWrite.All','Files.ReadWrite.All'];
 const LIST_REQ   = 'MC_Requests';
 const LIST_APR   = 'MC_Approvals';
 const ADMIN_EMAILS = ['','',''];
+let _configLoaded = false;
 
 const A2 = { name:'', email:'', role:'2차결재자(CFO)', order:2 };
 const A3 = { name:'', email:'', role:'3차결재자(관리자)', order:3 };
@@ -752,6 +753,7 @@ async function boot(account){
       if(_mcContactEl) _mcContactEl.textContent='문의 Email: '+_contact.email;
       const _adminList = cfgEmails(_cfg,['MC_ADMIN_1','MC_ADMIN_2','ADMIN_SP']);
       if(_adminList.length) ADMIN_EMAILS.splice(0,ADMIN_EMAILS.length,..._adminList);
+      _configLoaded = true;
       Object.assign(A2,    cfgVal(_cfg,'MC_CFO',A2));
       Object.assign(A3,    cfgVal(_cfg,'MC_ADMIN_APPROVER',A3));
       Object.assign(RR_A2, cfgVal(_cfg,'MC_CFO',RR_A2));
@@ -930,6 +932,15 @@ function checkMcFileSize(input){
 // ── Tab ──
 function switchTab(t){
   if (t === 'admin') {
+    if (!_configLoaded) {
+      const _btn = document.getElementById('tab-admin-btn');
+      if (_btn) { _btn.style.opacity='0.6'; _btn.style.pointerEvents='none'; _btn.title='권한 확인 중...'; }
+      setTimeout(() => {
+        if (_btn) { _btn.style.opacity=''; _btn.style.pointerEvents=''; _btn.title=''; }
+        switchTab('admin');
+      }, 1500);
+      return;
+    }
     const _emails = typeof ADMIN_EMAILS !== 'undefined' ? ADMIN_EMAILS : [];
     const _user = typeof user !== 'undefined' ? user : null;
     const _isAdmin = _user && _emails.map(e=>e.toLowerCase()).some(e =>
