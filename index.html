@@ -208,7 +208,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
   <div class="header">
     <div>
       <div class="title">STK Mobility Car Application</div>
-      <div class="sub" id="mc-contact-email">문의 Email: (로딩중...)</div>
+      <div class="sub" id="mc-contact-email">BU Admin 문의 Email: (로딩중...)</div>
     </div>
     <div class="user-info">
       <div>
@@ -750,7 +750,7 @@ async function boot(account){
     if (_cfg) {
       const _contact = cfgVal(_cfg,'MC_CONTACT',cfgVal(_cfg,'CONTACT_EMAIL',{email:''}));
       const _mcContactEl = document.getElementById('mc-contact-email');
-      if(_mcContactEl) _mcContactEl.textContent='문의 Email: '+_contact.email;
+      if(_mcContactEl) _mcContactEl.textContent='BU Admin 문의 Email: '+_contact.email;
       const _adminList = cfgEmails(_cfg,['MC_ADMIN_1','MC_ADMIN_2','ADMIN_SP']);
       if(_adminList.length) ADMIN_EMAILS.splice(0,ADMIN_EMAILS.length,..._adminList);
       _configLoaded = true;
