@@ -1101,7 +1101,7 @@ async function loadMyList(){
       api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
       api('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
     ]);
-    const myEmail=(user.email||'').toLowerCase();
+    const myEmail=(user.email||user.username||'').toLowerCase();
     const mcItems=mcData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'MC'}));
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     const all=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
@@ -1118,7 +1118,7 @@ async function loadMyList(){
 
 async function loadApprovalQueue(){
   try{
-    const myEmail=(user.email||'').toLowerCase();
+    const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,mcReq,rrAppr,rrReq]=await Promise.all([
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
       api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
@@ -1153,7 +1153,7 @@ async function loadApprovalQueue(){
 async function checkApprover(){
   if(!siteId)return;
   try{
-    const myEmail=(user.email||'').toLowerCase();
+    const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,rrAppr]=await Promise.all([
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
       api('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
