@@ -1433,7 +1433,7 @@ async function loadUnifiedBadge(){
   if(!siteId||!user)return;
   let total=0;
   await Promise.all(_UNIFIED_SYSTEMS.map(async sys=>{
-    try{ const d=await api('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'); total+=d.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(i.fields.Status||'').trim()==='대기').length; }catch(e){}
+    try{ const d=await api('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'); total+=d.value.filter(i=>(e=>(e===(user.email||'').toLowerCase()||e===(user.username||'').toLowerCase()))((i.fields.ApproverEmail||'').toLowerCase())&&(i.fields.Status||'').trim()==='대기').length; }catch(e){}
   }));
   const badge=document.getElementById('unif-badge');if(badge){badge.textContent=total;badge.style.display=total>0?'inline-block':'none';}
 }
