@@ -1653,7 +1653,7 @@ async function rrSubmitForm(){
     ];
     for(const a of approvers){
       await api('/sites/'+siteId+'/lists/'+RR_APR+'/items','POST',{fields:{
-        Title:'MC-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId+'-'+a.order, RequestID:reqId,
+        Title:'RR-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId+'-'+a.order, RequestID:reqId,
         ApproverEmail:a.email, ApproverName:a.name,
         ApproverRole:a.role, ApprovalOrder:a.order,
         Status:a.order===1?'대기':'대기(잠김)'
