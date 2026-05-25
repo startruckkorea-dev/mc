@@ -776,6 +776,9 @@ async function boot(account){
       document.getElementById('tab-admin-btn').style.display='block';
     }
   }catch(e){ alert('SharePoint 연결 오류: '+e.message); }
+
+  // 배지 자동 갱신 (60초마다)
+  setInterval(function(){ try{checkApprover();}catch(e){} }, 60000);
 }
 
 // ── Employees ──
