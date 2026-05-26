@@ -269,19 +269,23 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       </div>
 
       <div class="section-title">2. 사용 기간</div>
-      <div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:8px;align-items:center;margin-bottom:8px">
-        <span style="font-size:.78rem;font-weight:600;color:#323130;white-space:nowrap">PICKUP DATE</span>
-        <input type="date" id="f-pickup-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
-        <span style="font-size:.78rem;color:#605e5c">TIME</span>
-        <select id="f-pickup-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"></select>
-        <select id="f-pickup-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
-      </div>
-      <div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:8px;align-items:center;margin-bottom:12px">
-        <span style="font-size:.78rem;font-weight:600;color:#323130;white-space:nowrap">RETURN DATE</span>
-        <input type="date" id="f-return-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.82rem;font-family:inherit">
-        <span style="font-size:.78rem;color:#605e5c">TIME</span>
-        <select id="f-return-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"></select>
-        <select id="f-return-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:.78rem;font-weight:600;color:#323130">PICKUP DATE</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="date" id="f-pickup-date" style="flex:1;min-width:0;border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
+            <select id="f-pickup-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
+            <select id="f-pickup-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:.78rem;font-weight:600;color:#323130">RETURN DATE</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="date" id="f-return-date" style="flex:1;min-width:0;border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
+            <select id="f-return-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
+            <select id="f-return-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+          </div>
+        </div>
       </div>
 
       <div class="section-title">3. Driver's Information</div>
