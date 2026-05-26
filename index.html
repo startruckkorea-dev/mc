@@ -1109,7 +1109,7 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     const all=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트
-    document.querySelector('#tab-list table thead tr').innerHTML='<th>번호</th><th>구분</th><th>제목</th><th>상태</th><th>신청일</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th>번호</th><th>구분</th><th>제목</th><th>상태</th><th>신청일</th><th></th>';
     pgSet('list',all,item=>{
       const f=item.fields,type=item._type;
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
