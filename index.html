@@ -1114,7 +1114,7 @@ async function loadMyList(){
       const f=item.fields,type=item._type;
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
       const summary=f.Title||'';
-      return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${item.id}</td><td>${badge}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;
+      return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${item.id}</td><td>${badge}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDate(f.RequestDate)}</td><td style="text-align:center">${(()=>{const _st=(f.Status||'').trim();if(_st!=='대기')return '';return `<button onclick="withdrawRequest(event,item.id,'MC_Approvals','MC_Requests')" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:.75rem;cursor:pointer;font-family:inherit;">Withdraw</button>`;})()}</td></tr>`;
     }, '신청 내역이 없습니다.', 5);
   }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="5" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
@@ -1712,6 +1712,32 @@ function rrResetForm(){
   document.getElementById('rr-a1-email').value='';
 }
 
+
+// ── Withdraw (철회) ──────────────────────────────
+async function withdrawRequest(e, reqId, aprList, reqList) {
+  e.stopPropagation();
+  if(!confirm('신청을 철회하시겠습니까?\n철회 후에는 되돌릴 수 없습니다.')) return;
+  try {
+    const aprData = await apiAll('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500');
+    const myAprs = aprData.value.filter(i => Number(i.fields.RequestID) === Number(reqId));
+    const sorted = myAprs.sort((a,b)=>(a.fields.ApprovalOrder||0)-(b.fields.ApprovalOrder||0));
+    const firstSt = (sorted[0]?.fields?.Status?.Value || sorted[0]?.fields?.Status || '').trim();
+    if(firstSt !== '대기') {
+      if(typeof showAlert === 'function') showAlert('철회 불가','이미 결재가 진행된 신청은 철회할 수 없습니다.','⚠️');
+      else alert('이미 결재가 진행된 신청은 철회할 수 없습니다.');
+      return;
+    }
+    await Promise.all(myAprs.map(i =>
+      api('/sites/'+siteId+'/lists/'+aprList+'/items/'+i.id, 'PATCH', {fields:{Status:'철회(잠김)'}})
+    ));
+    await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId, 'PATCH', {fields:{Status:'철회'}});
+    if(typeof showAlert === 'function') showAlert('철회 완료','신청이 철회되었습니다.','✅');
+    else alert('신청이 철회되었습니다.');
+    loadMyList();
+  } catch(err) {
+    alert('오류: ' + err.message);
+  }
+}
 </script>
 <!-- FOOTER -->
 <footer style="margin-top:48px;padding:18px 28px;border-top:1px solid #e2e8f0;background:transparent;">
