@@ -36,8 +36,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .unif-btn-label{font-size:10px;color:#605e5c;text-align:center}
 /* Tabs */
 .tabs { display: flex; gap: 2px; margin-bottom: 16px; flex-wrap: wrap; }
-.tab-btn { padding: 8px 18px; border: none; background: #fff; border-radius: 4px 4px 0 0; font-size: 14px; cursor: pointer; color: #605e5c; border-bottom: 3px solid transparent; }
-.tab-btn.active { color: #0078d4; border-bottom: 3px solid #0078d4; font-weight: 500; }
+
+
 
 .badge{display:none;background:#a4262c;color:#fff;border-radius:10px;padding:1px 6px;font-size:.65rem;margin-left:5px;font-weight:700}
 /* Card */
@@ -81,18 +81,18 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .btn-secondary:hover{background:#f3f2f1}
 /* List */
 .list-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.list-table tbody tr[onclick]{cursor:pointer}
-.list-table tbody tr[onclick] td{cursor:pointer;pointer-events:auto}
-.list-table tbody tr[onclick]:hover{background:#f0f6ff}
+
+
+
 #tab-admin .list-table{min-width:960px}
 #tab-admin .card{overflow-x:auto}
-.list-table th{padding:9px 12px;text-align:left;background:#f3f2f1;border-bottom:1px solid #edebe9;font-weight:600;color:#323130;font-size:.75rem}
-.list-table td{padding:9px 12px;border-bottom:1px solid #edebe9;color:#323130}
-.list-table tr:hover td{background:#f9f8f7;cursor:pointer;cursor:pointer}
-.badge-type{background:#e1f0ff;color:#0078d4;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
-.badge-대기{background:#fff4ce;color:#7d5700;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
-.badge-승인완료{background:#dff6dd;color:#107c10;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
-.badge-반려{background:#fde7e9;color:#a4262c;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+
+
+
+
+
+
+
 /* 결재함 버튼 */
 .btn-approve{background:#107c10;color:#fff;border:none;border-radius:4px;padding:4px 14px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
 .btn-approve:hover{background:#0e6b0e}
@@ -187,6 +187,21 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,120,212,.4)}
 .btn-login:disabled{background:#cbd5e0;cursor:not-allowed;transform:none;box-shadow:none}
 #login-err{color:#e53e3e;font-size:.78rem;margin-top:10px;display:none}
+
+/* ── GW 시각 스타일 통일 (너비/레이아웃 변경 없음) ── */
+.tab-btn{padding:8px 18px;border:none;background:#fff;border-radius:4px 4px 0 0;font-size:14px;cursor:pointer;color:#605e5c;border-bottom:3px solid transparent;white-space:nowrap}
+.tab-btn.active{color:#0078d4;border-bottom:3px solid #0078d4;font-weight:500}
+.tabs{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap}
+.list-table th{padding:9px 12px;text-align:left;background:#f3f2f1;border-bottom:1px solid #edebe9;font-weight:600;color:#323130;font-size:.75rem}
+.list-table td{padding:9px 12px;border-bottom:1px solid #edebe9;color:#323130}
+.list-table tr:hover td{background:#f9f8f7;cursor:pointer}
+.list-table tbody tr[onclick]:hover td{background:#f0f6ff}
+.badge-type{background:#e1f0ff;color:#0078d4;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-대기{background:#fff4ce;color:#7d5700;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-승인완료{background:#dff6dd;color:#107c10;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-반려{background:#fde7e9;color:#a4262c;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-진행중{background:#dbeafe;color:#1d4ed8;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
+.badge-철회{background:#f1f5f9;color:#64748b;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:600}
 </style>
 </head>
 <body>
