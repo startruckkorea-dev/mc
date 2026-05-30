@@ -35,7 +35,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .unified-appr-btn .unif-badge{display:none;position:absolute;top:-5px;right:-5px;background:#a4262c;color:#fff;border-radius:10px;padding:1px 6px;font-size:11px;font-weight:700;min-width:18px;text-align:center;border:2px solid #fff}
 .unif-btn-label{font-size:10px;color:#605e5c;text-align:center}
 /* Tabs */
-.tabs { display: flex; gap: 2px; margin-bottom: 16px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 2px; margin-bottom: 16px; flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none; }
 
 
 
@@ -189,6 +189,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 #login-err{color:#e53e3e;font-size:.78rem;margin-top:10px;display:none}
 
 /* ── GW 시각 스타일 통일 (너비/레이아웃 변경 없음) ── */
+.tabs::-webkit-scrollbar{display:none}
 .tab-btn{padding:8px 18px;border:none;background:#fff;border-radius:4px 4px 0 0;font-size:14px;cursor:pointer;color:#605e5c;border-bottom:3px solid transparent;white-space:nowrap}
 .tab-btn.active{color:#0078d4;border-bottom:3px solid #0078d4;font-weight:500}
 .tabs{display:flex;gap:2px;margin-bottom:16px;flex-wrap:wrap}
