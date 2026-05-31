@@ -418,7 +418,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <table class="list-table" id="admin-table">
-        <thead id="admin-thead"><tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th>신청일</th></tr></thead>
+        <thead id="admin-thead"><tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th style="min-width:130px">신청일</th></tr></thead>
         <tbody id="admin-body"></tbody>
       </table>
     </div>
@@ -1201,6 +1201,7 @@ async function exportMCAdminExcel(){
     } else {
       if(dept) items=items.filter(i=>i.fields.Department===dept);
       headers=['번호','신청자','제목','사용기간','운전자','Department','상태','신청일'];
+      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th style="min-width:130px">신청일</th></tr>';
       rows=[headers,...items.map(item=>{const f=item.fields;return[item.id,f.RequesterEmail||'',f.Title||'',f.Period||'',f.DriverName||'',f.Department||'',f.Status||'',f.RequestDate?fmtDate(f.RequestDate):''];})];
     }
 
