@@ -376,7 +376,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 
   <!-- 내 신청 목록 -->
   <div id="tab-list" style="display:none">
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="padding:0;overflow-x:auto">
       <table class="list-table">
         <thead><tr><th>번호</th><th>Company</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th></tr></thead>
         <tbody id="list-body"></tbody>
@@ -387,7 +387,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 
   <!-- 결재함 -->
   <div id="tab-appr" style="display:none">
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="padding:0;overflow-x:auto">
       <table class="list-table">
         <thead><tr><th>신청번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
         <tbody id="appr-body"></tbody>
@@ -416,7 +416,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
         <button onclick="exportMCAdminExcel()" style="padding:6px 14px;background:#107c10;color:#fff;border:none;border-radius:4px;font-size:.82rem;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px"><span>📊</span> Excel 내보내기</button>
       </div>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="padding:0;overflow-x:auto">
       <table class="list-table" id="admin-table">
         <thead id="admin-thead"><tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th style="min-width:130px">신청일</th></tr></thead>
         <tbody id="admin-body"></tbody>
