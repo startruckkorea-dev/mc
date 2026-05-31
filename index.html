@@ -679,6 +679,7 @@ async function api(path,method='GET',body=null){
 }
 function loading(on){ document.getElementById('loading').className=on?'show':''; }
 function fmtDate(s){ if(!s)return''; const d=new Date(new Date(s).getTime()+9*3600*1000); return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0'); }
+function fmtDateCell(s){ return '<span style="white-space:nowrap">'+fmtDate(s)+'</span>'; }
 
 // ── Boot ──
 
@@ -1127,7 +1128,7 @@ async function loadMyList(){
       const f=item.fields,type=item._type;
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
       const summary=f.Title||'';
-      return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${item.id}</td><td>${badge}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDate(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:6px 8px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
+      return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${item.id}</td><td>${badge}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:6px 8px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
     }, '신청 내역이 없습니다.', 5);
   }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="5" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
@@ -1158,7 +1159,7 @@ async function loadApprovalQueue(){
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
       const summary=rf.Title||'';
       const detailFn=type==='RR'?'rrShowDetail':'showDetail';
-      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${f.RequestID}</td><td>${badge}</td><td style="font-size:.78rem">${rf.RequesterEmail||''}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDate(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
+      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td style="color:#0078d4;font-weight:600">${f.RequestID}</td><td>${badge}</td><td style="font-size:.78rem">${rf.RequesterEmail||''}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
     });
     dynLoadEnd();
     pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',7);
@@ -1229,12 +1230,12 @@ async function loadAdminList(){
       document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>Vehicle Model</th><th>Plate No.</th><th>Accident Type</th><th>상태</th><th>신청일</th></tr>';
       if(dept) items=items.filter(i=>i.fields.AccidentType===dept);
       document.getElementById('admin-count').textContent='총 '+items.length+'건';
-      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="rrShowDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.VehicleModel||''}</td><td>${f.PlateNumber||''}</td><td>${f.AccidentType||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="rrShowDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.VehicleModel||''}</td><td>${f.PlateNumber||''}</td><td>${f.AccidentType||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDateCell(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
     } else {
       document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th>신청일</th></tr>';
       if(dept) items=items.filter(i=>i.fields.Department===dept);
       document.getElementById('admin-count').textContent='총 '+items.length+'건';
-      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td style="color:#0078d4;font-weight:600">${item.id}</td><td style="font-size:.78rem">${f.RequesterEmail||''}</td><td style="font-size:.78rem;color:#0078d4">${f.Title||'-'}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td>${f.Department||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDate(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',8);
+      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="showDetail(${item.id})"><td style="color:#0078d4;font-weight:600">${item.id}</td><td style="font-size:.78rem">${f.RequesterEmail||''}</td><td style="font-size:.78rem;color:#0078d4">${f.Title||'-'}</td><td style="font-size:.75rem">${f.Period||''}</td><td>${f.DriverName||''}</td><td>${f.Department||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDateCell(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',8);
     }
   }catch(e){dynLoadEnd();}
 }
