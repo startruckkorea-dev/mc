@@ -1606,7 +1606,7 @@ async function rrSubmitForm(){
   if(!accidentType){alert('Accident Type을 선택해주세요.');return;}
   if(!passengers){alert('Passenger(s) 정보를 입력해주세요.');return;}
   if(!location){alert('Location of Accident를 입력해주세요.');return;}
-  // MC: Line Manager 없음, 결재자는 자동 지정
+  if(!a1Email){alert('1차 결재자(Line Manager)를 선택해주세요.');return;}
 
   const fileIds=['rr-att1','rr-att2','rr-att3','rr-att4','rr-att5'];
   let totalMB=0;
