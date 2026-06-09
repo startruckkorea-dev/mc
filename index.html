@@ -1197,8 +1197,8 @@ async function exportMCAdminExcel(){
     let headers, rows;
     if(adminType==='RR'){
       if(dept) items=items.filter(i=>i.fields.AccidentType===dept);
-      headers=['번호','신청자','Vehicle Model','Plate No.','Accident Type','상태','신청일'];
-      rows=[headers,...items.map(item=>{const f=item.fields;return[item.id,f.RequesterEmail||'',f.VehicleModel||'',f.PlateNumber||'',f.AccidentType||'',f.Status||'',f.RequestDate?fmtDate(f.RequestDate):''];})];
+      headers=['번호','신청자','제목','Vehicle Model','Plate No.','Accident Type','상태','신청일'];
+      rows=[headers,...items.map(item=>{const f=item.fields;return[item.id,f.RequesterEmail||'',f.Title||'',f.VehicleModel||'',f.PlateNumber||'',f.AccidentType||'',f.Status||'',f.RequestDate?fmtDate(f.RequestDate):''];})];
     } else {
       if(dept) items=items.filter(i=>i.fields.Department===dept);
       headers=['번호','신청자','제목','사용기간','운전자','Department','상태','신청일'];
@@ -1227,10 +1227,10 @@ async function loadAdminList(){
 
     // 헤더 및 행 렌더러 분기
     if(adminType==='RR'){
-      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>Vehicle Model</th><th>Plate No.</th><th>Accident Type</th><th>상태</th><th>신청일</th></tr>';
+      document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>제목</th><th>Vehicle Model</th><th>Plate No.</th><th>Accident Type</th><th>상태</th><th>신청일</th></tr>';
       if(dept) items=items.filter(i=>i.fields.AccidentType===dept);
       document.getElementById('admin-count').textContent='총 '+items.length+'건';
-      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="rrShowDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td>${f.VehicleModel||''}</td><td>${f.PlateNumber||''}</td><td>${f.AccidentType||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDateCell(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',7);
+      pgSet('admin',items,item=>{const f=item.fields;return`<tr style="cursor:pointer" onclick="rrShowDetail(${item.id})"><td>${item.id}</td><td>${f.RequesterEmail||''}</td><td style="color:#0078d4;font-size:.78rem">${f.Title||'-'}</td><td>${f.VehicleModel||''}</td><td>${f.PlateNumber||''}</td><td>${f.AccidentType||''}</td><td><span class="badge-${f.Status||'대기'}">${f.Status||''}</span></td><td>${fmtDateCell(f.RequestDate)}</td></tr>`;},'조회 결과가 없습니다.',8);
     } else {
       document.getElementById('admin-thead').innerHTML='<tr><th>번호</th><th>신청자</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>상태</th><th>신청일</th></tr>';
       if(dept) items=items.filter(i=>i.fields.Department===dept);
@@ -1555,7 +1555,7 @@ async function rrShowDetail(id){
 
     const myPending=apprList.find(a=>(a.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(a.fields.Status||'').trim()==='대기');
     document.getElementById('modal-content').innerHTML=
-      sec('기본 정보')+row('신청번호',id)+row('신청자',f.RequesterEmail)+
+      sec('기본 정보')+row('신청번호',id)+row('제목',f.Title)+row('신청자',f.RequesterEmail)+
       row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+row('신청일',fmtDate(f.RequestDate))+
       sec('차량 정보')+row('Vehicle Model',f.VehicleModel)+row('Plate Number',f.PlateNumber)+
       sec('사고 정보')+row('Accident Date/Time',f.AccidentDateTime)+row('Accident Type',f.AccidentType)+
