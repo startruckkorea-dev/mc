@@ -1310,7 +1310,7 @@ async function showDetail(id){
     const apprList=apprData.value.filter(i=>i.fields.RequestID===parseInt(id)).sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:6px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
-    const row=(l,v)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value">${v||'-'}</div></div>`;
+    const row=(l,v,wrap)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value"${wrap?' style="white-space:pre-wrap"':''}>${v||'-'}</div></div>`;
 
     let filesHtml='<div style="font-size:13px;color:#605e5c">첨부파일 없음</div>';
     if(f.AttachedFiles){
@@ -1360,7 +1360,7 @@ async function showDetail(id){
       row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+
       row('신청일',fmtDate(f.RequestDate))+
       sec('사용 정보')+
-      row('사용 기간',f.Period)+row('Purpose',f.Purpose)+
+      row('사용 기간',f.Period)+row('Purpose',f.Purpose,true)+
       sec('운전자 정보')+
       row('Driver Name',f.DriverName)+row('Driver Dept',f.DriverDept)+
       sec('첨부파일')+filesHtml+
@@ -1530,7 +1530,7 @@ async function rrShowDetail(id){
     const apprList=apprData.value.filter(i=>i.fields.RequestID===parseInt(id)).sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:14px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:5px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
-    const row=(l,v)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value">${v||'-'}</div></div>`;
+    const row=(l,v,wrap)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value"${wrap?' style="white-space:pre-wrap"':''}>${v||'-'}</div></div>`;
 
     let filesHtml='<div style="font-size:13px;color:#605e5c">첨부파일 없음</div>';
     if(f.AttachedFiles){
