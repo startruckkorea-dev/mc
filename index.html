@@ -1355,7 +1355,7 @@ async function showDetail(id){
 
     document.getElementById('modal-content').innerHTML=
       sec('기본 정보')+
-      row('신청번호',id)+row('신청자',f.RequesterEmail)+row('Company',f.Company)+
+      row('신청자',f.RequesterEmail)+row('Company',f.Company)+
       row('Department',f.Department)+row('Car Model',f.CarModel)+row('Car Number',f.CarNumber)+
       row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+
       row('신청일',fmtDate(f.RequestDate))+
@@ -1555,7 +1555,7 @@ async function rrShowDetail(id){
 
     const myPending=apprList.find(a=>(a.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(a.fields.Status||'').trim()==='대기');
     document.getElementById('modal-content').innerHTML=
-      sec('기본 정보')+row('신청번호',id)+row('제목',f.Title)+row('신청자',f.RequesterEmail)+
+      sec('기본 정보')+row('제목',f.Title)+row('신청자',f.RequesterEmail)+
       row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+row('신청일',fmtDate(f.RequestDate))+
       sec('차량 정보')+row('Vehicle Model',f.VehicleModel)+row('Plate Number',f.PlateNumber)+
       sec('사고 정보')+row('Accident Date/Time',f.AccidentDateTime)+row('Accident Type',f.AccidentType)+
