@@ -1355,7 +1355,7 @@ async function showDetail(id){
 
     document.getElementById('modal-content').innerHTML=
       sec('기본 정보')+
-      row('신청자',f.RequesterEmail)+row('Company',f.Company)+
+      row('제목',f.Title)+row('신청자',f.RequesterEmail)+row('Company',f.Company)+
       row('Department',f.Department)+row('Car Model',f.CarModel)+row('Car Number',f.CarNumber)+
       row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+
       row('신청일',fmtDate(f.RequestDate))+
