@@ -661,6 +661,8 @@ async function token(){
 
 // ── 페이지네이션 전체 조회 헬퍼 (기존 .value 접근 호환) ──
 async function apiAll(path) {
+  // SharePoint 기본 페이지 크기(200건)보다 크게 요청해서 왕복 횟수를 줄임 (데이터 누락 없이 전량은 그대로 다 읽음)
+  if (!/[?&]\$top=/.test(path)) path += (path.includes('?') ? '&' : '?') + '$top=999';
   let items = [], url = path;
   while(url) {
     const d = await api(url);
@@ -1115,8 +1117,8 @@ function pgGo(id,p){if(!_pgState[id])return;const tot=_pgState[id].items.length,
 async function loadMyList(){
   try{
     const [mcData,rrData]=await Promise.all([
-      api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
     ]);
     const myEmail=(user.email||user.username||'').toLowerCase();
     const mcItems=mcData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'MC'}));
@@ -1138,9 +1140,9 @@ async function loadApprovalQueue(){
     const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,mcReq,rrAppr,rrReq]=await Promise.all([
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
     ]);
     const mcReqMap={};mcReq.value.forEach(r=>{mcReqMap[r.id]=r.fields;});
     const rrReqMap={};rrReq.value.forEach(r=>{rrReqMap[r.id]=r.fields;});
@@ -1173,7 +1175,7 @@ async function checkApprover(){
     const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,rrAppr]=await Promise.all([
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
-      api('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
     ]);
     const mcMine=mcAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').length;
     const rrMine=rrAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').length;
@@ -1188,7 +1190,7 @@ async function exportMCAdminExcel(){
   const listName=adminType==='RR'?RR_REQ:LIST_REQ;
   loading(true,'Excel 생성 중...');
   try{
-    const data=await api('/sites/'+siteId+'/lists/'+listName+'/items?$expand=fields&$top=500');
+    const data=await apiAll('/sites/'+siteId+'/lists/'+listName+'/items?$expand=fields&$top=500');
     const status=document.getElementById('admin-status').value;
     const dept=document.getElementById('admin-dept').value;
     let items=data.value.sort((a,b)=>b.id-a.id);
@@ -1219,7 +1221,7 @@ async function loadAdminList(){
   try{
     const adminType=(document.getElementById('admin-type')||{}).value||'MC';
     const listName=adminType==='RR'?RR_REQ:LIST_REQ;
-    const data=await api('/sites/'+siteId+'/lists/'+listName+'/items?$expand=fields&$top=500');
+    const data=await apiAll('/sites/'+siteId+'/lists/'+listName+'/items?$expand=fields&$top=500');
     const status=document.getElementById('admin-status').value;
     const dept=document.getElementById('admin-dept').value;
     let items=data.value.sort((a,b)=>b.id-a.id);
@@ -1451,7 +1453,7 @@ async function loadUnifiedBadge(){
   if(!siteId||!user)return;
   let total=0;
   await Promise.all(_UNIFIED_SYSTEMS.map(async sys=>{
-    try{ const d=await api('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'); total+=d.value.filter(i=>(e=>(e===(user.email||'').toLowerCase()||e===(user.username||'').toLowerCase()))((i.fields.ApproverEmail||'').toLowerCase())&&(i.fields.Status||'').trim()==='대기').length; }catch(e){}
+    try{ const d=await apiAll('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'); total+=d.value.filter(i=>(e=>(e===(user.email||'').toLowerCase()||e===(user.username||'').toLowerCase()))((i.fields.ApproverEmail||'').toLowerCase())&&(i.fields.Status||'').trim()==='대기').length; }catch(e){}
   }));
   const badge=document.getElementById('unif-badge');if(badge){badge.textContent=total;badge.style.display=total>0?'inline-block':'none';}
 }
@@ -1464,7 +1466,7 @@ async function loadUnifiedData(){
   let html='',grandTotal=0; _uniCache={};
   const results=await Promise.all(_UNIFIED_SYSTEMS.map(async sys=>{
     try{
-      const [apprData,reqData]=await Promise.all([api('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'),api('/sites/'+siteId+'/lists/'+sys.reqList+'/items?$expand=fields&$top=500')]);
+      const [apprData,reqData]=await Promise.all([apiAll('/sites/'+siteId+'/lists/'+sys.list+'/items?$expand=fields&$top=500'),apiAll('/sites/'+siteId+'/lists/'+sys.reqList+'/items?$expand=fields&$top=500')]);
       const reqMap={};reqData.value.forEach(r=>{reqMap[r.id]=r.fields;});
       const allApprMap={};apprData.value.forEach(a=>{const rid=String(a.fields.RequestID);if(!allApprMap[rid])allApprMap[rid]=[];allApprMap[rid].push(a.fields);});
       const mine=apprData.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').sort((a,b)=>b.fields.RequestID-a.fields.RequestID);
@@ -1524,7 +1526,7 @@ async function rrShowDetail(id){
   try{
     const [r,apprData]=await Promise.all([
       api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+id+'?$expand=fields'),
-      api('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
     ]);
     const f=r.fields;
     const apprList=apprData.value.filter(i=>i.fields.RequestID===parseInt(id)).sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
