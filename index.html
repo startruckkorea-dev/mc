@@ -671,6 +671,67 @@ async function apiAll(path) {
   }
   return {value: items};
 }
+
+// ══ 감사 로깅 (Excel 내보내기 등) — STK-DB "Logging_data" 폴더에 시스템/날짜별로 개별 JSON 파일 기록 ══
+// fire-and-forget: 호출부를 절대 블로킹하지 않고, 실패해도 원 기능(Excel 내보내기 등)에 영향 없음
+let _logDriveId = null;
+async function _getLogDriveId() {
+  if (_logDriveId) return _logDriveId;
+  try {
+    const drivesRes = await api('/sites/' + siteId + '/drives');
+    let docDrive = (drivesRes.value || []).find(d => ['Documents','문서','Shared Documents'].includes(d.name));
+    if (!docDrive && drivesRes.value && drivesRes.value.length) docDrive = drivesRes.value[0];
+    _logDriveId = docDrive ? docDrive.id : null;
+  } catch(e) { console.warn('[Log] drive 조회 실패:', e.message); }
+  return _logDriveId;
+}
+const _ensuredLogFolders = new Set();
+async function _ensureLogFolder(driveId, folderPath, t) {
+  if (_ensuredLogFolders.has(folderPath)) return true;
+  const parts = folderPath.split('/').filter(Boolean);
+  let cur = '';
+  try {
+    for (const part of parts) {
+      const parentUrl = cur ? `${GRAPH}/drives/${driveId}/root:/${cur}:/children` : `${GRAPH}/drives/${driveId}/root/children`;
+      const res = await fetch(parentUrl, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: part, folder: {}, '@microsoft.graph.conflictBehavior': 'fail' })
+      });
+      if (!res.ok && res.status !== 409) { console.warn('[Log] 폴더 생성 실패:', cur+'/'+part, res.status); return false; }
+      cur = cur ? cur + '/' + part : part;
+    }
+    _ensuredLogFolders.add(folderPath);
+    return true;
+  } catch(e) { console.warn('[Log] 폴더 생성 오류:', e.message); return false; }
+}
+function logAction(systemName, action, detail) {
+  (async () => {
+    try {
+      const driveId = await _getLogDriveId();
+      if (!driveId) return;
+      const t = await token();
+      const now = new Date(new Date().getTime() + 9*3600*1000); // KST
+      const p = n => String(n).padStart(2,'0');
+      const dateStr = `${now.getUTCFullYear()}-${p(now.getUTCMonth()+1)}-${p(now.getUTCDate())}`;
+      const timeStr = `${p(now.getUTCHours())}${p(now.getUTCMinutes())}${p(now.getUTCSeconds())}`;
+      const rawUser = (user && (user.email || user.username)) || 'unknown';
+      const userTag = rawUser.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '_');
+      const rand = Math.random().toString(36).slice(2, 6);
+      const folderPath = `Logging_data/${systemName}/${dateStr}`;
+      const folderOk = await _ensureLogFolder(driveId, folderPath, t);
+      if (!folderOk) return;
+      const path = `/${folderPath}/${timeStr}_${userTag}_${rand}.json`;
+      const body = JSON.stringify({
+        timestampKST: `${dateStr} ${p(now.getUTCHours())}:${p(now.getUTCMinutes())}:${p(now.getUTCSeconds())}`,
+        user: rawUser, system: systemName, action, detail: detail || {}
+      });
+      await fetch(GRAPH + '/drives/' + driveId + '/root:' + path + ':/content', {
+        method: 'PUT', headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body
+      });
+    } catch(e) { console.warn('[Log] 기록 실패(무시됨):', e.message); }
+  })();
+}
 async function api(path,method='GET',body=null){
   const t=await token();
   const opts={method,headers:{Authorization:'Bearer '+t,'Content-Type':'application/json'}};
@@ -1209,6 +1270,7 @@ async function exportMCAdminExcel(){
     }
 
     if(items.length===0){loading(false);alert('내보낼 데이터가 없습니다.');return;}
+    logAction(adminType==='RR'?'Repair Report':'Mobility Car', 'Excel 내보내기', { 건수: items.length, 필터: { 상태: status||'전체', 부서구분: dept||'전체' } });
     const ws=XLSX.utils.aoa_to_sheet(rows);
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,adminType==='RR'?'Repair Report':'Mobility Car');
