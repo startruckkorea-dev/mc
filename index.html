@@ -641,9 +641,7 @@ window.addEventListener('load', async () => {
 async function signIn(){
   try{
     if(window!==window.top){window.open(window.location.href,'_blank');return;}
-    const r=await msalApp.loginPopup({scopes:SCOPES});
-    msalApp.setActiveAccount(r.account);
-    await boot(r.account);
+    await msalApp.loginRedirect({scopes:SCOPES});
   }catch(e){ document.getElementById('login-err').textContent=e.message; document.getElementById('login-err').style.display='block'; }
 }
 document.getElementById('btn-login').onclick = signIn;
