@@ -1202,14 +1202,14 @@ async function loadApprovalQueue(){
   try{
     const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,mcReq,rrAppr,rrReq]=await Promise.all([
-      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+"/items?$expand=fields&$top=500&$filter=fields/Status eq '대기'"),
       apiAll('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
-      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_APR+"/items?$expand=fields&$top=500&$filter=fields/Status eq '대기'"),
       apiAll('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
     ]);
     const mcReqMap={};mcReq.value.forEach(r=>{mcReqMap[r.id]=r.fields;});
     const rrReqMap={};rrReq.value.forEach(r=>{rrReqMap[r.id]=r.fields;});
-    const _dedup=(arr,type)=>{const m={};arr.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').forEach(i=>{const rid=String(i.fields.RequestID);if(!m[rid]||i.fields.ApprovalOrder<m[rid].fields.ApprovalOrder)m[rid]=i;});return Object.values(m).map(i=>({...i,_type:type}));};
+    const _dedup=(arr,type)=>{const m={};arr.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail).forEach(i=>{const rid=String(i.fields.RequestID);if(!m[rid]||i.fields.ApprovalOrder<m[rid].fields.ApprovalOrder)m[rid]=i;});return Object.values(m).map(i=>({...i,_type:type}));};
     const mcMine=_dedup(mcAppr.value,'MC');
     const rrMine=_dedup(rrAppr.value,'RR');
     // MC/RR 각각 RequestID가 별도 시퀀스이므로 RequestDate 기준으로 정렬 (최신 신청이 위)
@@ -1237,11 +1237,11 @@ async function checkApprover(){
   try{
     const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,rrAppr]=await Promise.all([
-      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
-      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+"/items?$expand=fields&$top=500&$filter=fields/Status eq '대기'"),
+      apiAll('/sites/'+siteId+'/lists/'+RR_APR+"/items?$expand=fields&$top=500&$filter=fields/Status eq '대기'"),
     ]);
-    const mcMine=mcAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').length;
-    const rrMine=rrAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail&&(i.fields.Status||'').trim()==='대기').length;
+    const mcMine=mcAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail).length;
+    const rrMine=rrAppr.value.filter(i=>(i.fields.ApproverEmail||'').toLowerCase()===myEmail).length;
     const total=mcMine+rrMine;
     const badge=document.getElementById('appr-badge');badge.textContent=total;badge.style.display=total?'inline':'none';
   }catch(e){}
@@ -1350,8 +1350,8 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
     if(action==='반려'){
       await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'반려'}});
     } else {
-      const all=await apiAll('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500');
-      const next=all.value.filter(i=>Number(i.fields.RequestID)===Number(reqId)&&(i.fields.Status||'').trim()==='대기(잠김)').sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+      const all=await apiAll('/sites/'+siteId+'/lists/'+aprList+"/items?$expand=fields&$top=500&$filter=fields/RequestID eq "+parseInt(reqId)+" and fields/Status eq '대기(잠김)'");
+      const next=all.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
       if(next.length) await api('/sites/'+siteId+'/lists/'+aprList+'/items/'+next[0].id,'PATCH',{fields:{Status:'대기'}});
       else await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'승인완료'}});
     }
@@ -1370,10 +1370,10 @@ async function showDetail(id){
   try{
     const [r,apprData]=await Promise.all([
       api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+id+'?$expand=fields'),
-      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(id)),
     ]);
     const f=r.fields;
-    const apprList=apprData.value.filter(i=>i.fields.RequestID===parseInt(id)).sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+    const apprList=apprData.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:6px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
     const row=(l,v,wrap)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value"${wrap?' style="white-space:pre-wrap"':''}>${v||'-'}</div></div>`;
@@ -1590,10 +1590,10 @@ async function rrShowDetail(id){
   try{
     const [r,apprData]=await Promise.all([
       api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+id+'?$expand=fields'),
-      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500'),
+      apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(id)),
     ]);
     const f=r.fields;
-    const apprList=apprData.value.filter(i=>i.fields.RequestID===parseInt(id)).sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
+    const apprList=apprData.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:14px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:5px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
     const row=(l,v,wrap)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value"${wrap?' style="white-space:pre-wrap"':''}>${v||'-'}</div></div>`;
@@ -1799,8 +1799,8 @@ async function withdrawRequest(e, reqId, aprList, reqList) {
   e.stopPropagation();
   if(!confirm('신청을 철회하시겠습니까?\n철회 후에는 되돌릴 수 없습니다.')) return;
   try {
-    const aprData = await apiAll('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500');
-    const myAprs = aprData.value.filter(i => Number(i.fields.RequestID) === Number(reqId));
+    const aprData = await apiAll('/sites/'+siteId+'/lists/'+aprList+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(reqId));
+    const myAprs = aprData.value;
     const sorted = myAprs.sort((a,b)=>(a.fields.ApprovalOrder||0)-(b.fields.ApprovalOrder||0));
     const firstSt = (sorted[0]?.fields?.Status?.Value || sorted[0]?.fields?.Status || '').trim();
     if(firstSt !== '대기') {
