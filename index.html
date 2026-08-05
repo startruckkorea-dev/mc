@@ -1118,7 +1118,7 @@ async function submitForm(){
         if(links.length)await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
       }catch(fe){console.error(fe);}
     }
-    await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'MC-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId}});
+    await api('/sites/'+siteId+'/lists/'+LIST_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'MC-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId}});
 
     // 결재자 등록 (MC: CFO 1차, Hye-jin 2차)
     const approvers=[
@@ -1127,13 +1127,13 @@ async function submitForm(){
     ];
     for(const a of approvers){
       await api('/sites/'+siteId+'/lists/'+LIST_APR+'/items','POST',{fields:{
-        Title:'MC-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId+'-'+a.order, RequestID:reqId,
+        Title:'MC-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId+'-'+a.order, RequestID:reqId,
         ApproverEmail:a.email, ApproverName:a.name,
         ApproverRole:a.role, ApprovalOrder:a.order,
         Status:a.order===1?'대기':'대기(잠김)'
       }});
     }
-    showAlert('신청이 완료되었습니다.', 'MC-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId);
+    showAlert('신청이 완료되었습니다.', 'MC-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId);
     resetForm(); switchTab('list');
   }catch(e){showAlert('오류가 발생했습니다.',e.message,'⚠️');}
   finally{loading(false);}
@@ -1278,7 +1278,7 @@ async function exportMCAdminExcel(){
     const ws=XLSX.utils.aoa_to_sheet(rows);
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,adminType==='RR'?'Repair Report':'Mobility Car');
-    XLSX.writeFile(wb,'MC_Admin_'+adminType+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    XLSX.writeFile(wb,'MC_Admin_'+adminType+'_'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'.xlsx');
   }catch(e){alert('Excel 생성 실패: '+e.message);}
   finally{loading(false);}
 }
@@ -1725,7 +1725,7 @@ async function rrSubmitForm(){
         if(links.length)await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{AttachedFiles:links.join(';')}});
       }catch(fe){console.error(fe);}
     }
-    await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'RR-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId}});
+    await api('/sites/'+siteId+'/lists/'+RR_REQ+'/items/'+reqId,'PATCH',{fields:{Title:'RR-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId}});
 
     // 결재자 등록
     const a1Name=document.getElementById('rr-a1-name').value;
@@ -1736,13 +1736,13 @@ async function rrSubmitForm(){
     ];
     for(const a of approvers){
       await api('/sites/'+siteId+'/lists/'+RR_APR+'/items','POST',{fields:{
-        Title:'RR-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId+'-'+a.order, RequestID:reqId,
+        Title:'RR-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId+'-'+a.order, RequestID:reqId,
         ApproverEmail:a.email, ApproverName:a.name,
         ApproverRole:a.role, ApprovalOrder:a.order,
         Status:a.order===1?'대기':'대기(잠김)'
       }});
     }
-    showAlert('Repair Report가 제출되었습니다.', 'RR-'+new Date().toISOString().slice(0,10)+'_ID-'+reqId);
+    showAlert('Repair Report가 제출되었습니다.', 'RR-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId);
     rrResetForm();
     switchTab('list');
   }catch(e){showAlert('오류가 발생했습니다.',e.message,'⚠️');}
