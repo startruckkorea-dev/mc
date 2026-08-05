@@ -1496,7 +1496,7 @@ function openUniDetail(apprId){
   const d=_uniCache[apprId];if(!d)return;
   const{sys,reqId,rf,apprList}=d;
   const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
-  const fmt=s=>{if(!s)return'-';const v=new Date(s);return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0')+' '+String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');};
+  const fmt=s=>{if(!s)return'-';const v=new Date(new Date(s).getTime()+9*3600*1000);return v.getUTCFullYear()+'-'+String(v.getUTCMonth()+1).padStart(2,'0')+'-'+String(v.getUTCDate()).padStart(2,'0')+' '+String(v.getUTCHours()).padStart(2,'0')+':'+String(v.getUTCMinutes()).padStart(2,'0');};
   let rows='';
   if(sys.key==='MC') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">Department</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Department||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">사용기간</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1;font-size:.75rem">${rf.Period||'-'}</td></tr>`;
   else if(sys.key==='GW') rows=`<tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">Source</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.Source||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">Type</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.GoodwillType||'-'}</td></tr>`;
@@ -1557,7 +1557,7 @@ async function loadUnifiedData(){
         const f=item.fields,rf=reqMap[String(f.RequestID)]||{};
         const apprList=(allApprMap[String(f.RequestID)]||[]).sort((a,b)=>(a.ApprovalOrder||0)-(b.ApprovalOrder||0));
         _uniCache[item.id]={sys,reqId:f.RequestID,rf,apprList};
-        const fmt=s=>{if(!s)return'-';const v=new Date(s);return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0')+' '+String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');};
+        const fmt=s=>{if(!s)return'-';const v=new Date(new Date(s).getTime()+9*3600*1000);return v.getUTCFullYear()+'-'+String(v.getUTCMonth()+1).padStart(2,'0')+'-'+String(v.getUTCDate()).padStart(2,'0')+' '+String(v.getUTCHours()).padStart(2,'0')+':'+String(v.getUTCMinutes()).padStart(2,'0');};
         let cols='';
         if(sys.key==='MC') cols=`<td>${rf.Department||'-'}</td><td style="font-size:.72rem">${rf.Period||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
         else if(sys.key==='GW') cols=`<td>${rf.Source||'-'}</td><td>${rf.GoodwillType||'-'}</td><td>${rf.RequesterEmail||'-'}</td><td>${fmt(rf.RequestDate)}</td>`;
