@@ -1178,8 +1178,8 @@ function pgGo(id,p){if(!_pgState[id])return;const tot=_pgState[id].items.length,
 
 // ── Load Lists ──
 async function loadMyList(){
-  if(!siteId){ const s = await api('/sites/'+SITE_PATH); siteId = s.id; }
   try{
+    if(!siteId){ const s = await api('/sites/'+SITE_PATH); siteId = s.id; }
     const [mcData,rrData]=await Promise.all([
       apiAll('/sites/'+siteId+'/lists/'+LIST_REQ+'/items?$expand=fields&$top=500'),
       apiAll('/sites/'+siteId+'/lists/'+RR_REQ+'/items?$expand=fields&$top=500'),
@@ -1200,8 +1200,8 @@ async function loadMyList(){
 }
 
 async function loadApprovalQueue(){
-  if(!siteId){ const s = await api('/sites/'+SITE_PATH); siteId = s.id; }
   try{
+    if(!siteId){ const s = await api('/sites/'+SITE_PATH); siteId = s.id; }
     const myEmail=(user.email||user.username||'').toLowerCase();
     const [mcAppr,mcReq,rrAppr,rrReq]=await Promise.all([
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+"/items?$expand=fields&$top=500&$filter=fields/Status eq '대기'"),
