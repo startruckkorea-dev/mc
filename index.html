@@ -602,6 +602,15 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 <div id="loading"><div class="loading-box"><div class="spinner"></div><span>처리 중입니다...</span></div></div>
 
 <script>
+
+// ── XSS 방어: 사용자 자유 입력을 innerHTML에 넣기 전 이스케이프 ──
+// Title 등 시스템 생성 값과 달리 Description·RequestTitle은 사용자가 자유롭게 입력하므로,
+// <img src=x onerror=...> 같은 페이로드가 그대로 실행될 수 있다.
+function escHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 const CLIENT_ID  = '432976c2-b43a-492e-8213-ece505fa1f51';
 const TENANT_ID  = '19cab1f5-21f4-44df-8ac6-96d6ca595203';
 const SITE_PATH  = 'startruckkorea.sharepoint.com:/sites/STK-DB:';
@@ -1628,7 +1637,7 @@ async function rrShowDetail(id){
       sec('차량 정보')+row('Vehicle Model',f.VehicleModel)+row('Plate Number',f.PlateNumber)+
       sec('사고 정보')+row('Accident Date/Time',f.AccidentDateTime)+row('Accident Type',f.AccidentType)+
       row('Passenger(s)',f.Passengers)+row('Location',f.Location)+
-      row('Description',`<div style="white-space:pre-wrap">${f.Description||'-'}</div>`)+
+      row('Description',`<div style="white-space:pre-wrap">${escHtml(f.Description||'-')}</div>`)+
       sec('첨부파일')+filesHtml+apprHtml+
       (myPending?`<div style="display:flex;gap:10px;margin-top:14px"><button onclick="showConfirm(${myPending.id},'승인',${id},'RR')" class="btn-approve" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">✅ 승인</button><button onclick="showConfirm(${myPending.id},'반려',${id},'RR')" class="btn-reject" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">❌ 반려</button></div>`:'');
 
