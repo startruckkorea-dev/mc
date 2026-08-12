@@ -1425,7 +1425,7 @@ async function showDetail(id){
       sec('기본 정보')+
       row('제목',f.Title)+row('신청자',f.RequesterEmail)+row('Company',f.Company)+
       row('Department',f.Department)+row('Car Model',f.CarModel)+row('Car Number',f.CarNumber)+
-      row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+
+      row('상태',`<span class="badge-${(function(s){var v=(s||'대기').trim();return v.indexOf('철회')===0?'철회':(v==='승인'?'승인완료':v);})(f.Status)}">${f.Status||'대기'}</span>`)+
       row('신청일',fmtDate(f.RequestDate))+
       sec('사용 정보')+
       row('사용 기간',f.Period)+row('Purpose',f.Purpose,true)+
@@ -1507,7 +1507,7 @@ function openUniDetail(apprId){
   const inner=document.getElementById('uni-detail-inner');
   if(!inner)return;
   inner.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-weight:700;font-size:.95rem;color:#323130"><span class="sys-badge ${sys.color}" style="margin-right:6px">${sys.key}</span>신청번호 ${reqId}</div><button onclick="closeUniDetail()" style="background:none;border:1px solid #d2d0ce;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.85rem;color:#605e5c">✕</button></div>`+
-    `<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:12px"><tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">신청자</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.RequesterEmail||'-'}</td></tr>${rows}<tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">상태</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1;font-weight:600;color:${sc[rf.Status]||'#323130'}">${rf.Status||'-'}</td></tr><tr><td style="color:#605e5c;padding:5px 0">신청일</td><td style="padding:5px 0">${fmt(rf.RequestDate)}</td></tr></table>`+
+    `<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:12px"><tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">신청자</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.RequesterEmail||'-'}</td></tr>${rows}<tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">상태</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1"><span class="badge-${(function(s){var v=(s||'대기').trim();return v.indexOf('철회')===0?'철회':(v==='승인'?'승인완료':v);})(rf.Status)}">${rf.Status||'대기'}</span></td></tr><tr><td style="color:#605e5c;padding:5px 0">신청일</td><td style="padding:5px 0">${fmt(rf.RequestDate)}</td></tr></table>`+
     `<div style="font-size:.72rem;font-weight:600;color:#0078d4;background:#f0f6ff;border-left:3px solid #0078d4;padding:5px 10px;border-radius:4px;margin-bottom:8px">결재 현황</div>`+
     `<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden;margin-bottom:14px">${apprList.map(af=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:.8rem">${(()=>{const _r=af.ApproverRole||'',_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+_o+'차</b> 결재자'+_q;})()}</div><div style="font-size:.72rem;color:#605e5c">${af.ApproverName||''} · ${af.ApproverEmail||''}</div></div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:.75rem;white-space:nowrap">${af.Status||''}</span></div>`).join('')}</div>`+
     `<div style="display:flex;gap:10px;margin-bottom:10px"><button onclick="showConfirm(${apprId},'승인',${reqId});closeUniDetail();" class="btn-approve" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">✅ 승인</button><button onclick="showConfirm(${apprId},'반려',${reqId});closeUniDetail();" class="btn-reject" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">❌ 반려</button></div>`+
@@ -1624,7 +1624,7 @@ async function rrShowDetail(id){
     const myPending=apprList.find(a=>(a.fields.ApproverEmail||'').toLowerCase()===(user.email||'').toLowerCase()&&(a.fields.Status||'').trim()==='대기');
     document.getElementById('modal-content').innerHTML=
       sec('기본 정보')+row('제목',f.Title)+row('신청자',f.RequesterEmail)+
-      row('상태',`<span style="font-weight:600;color:${sc[f.Status]||'#323130'}">${f.Status||''}</span>`)+row('신청일',fmtDate(f.RequestDate))+
+      row('상태',`<span class="badge-${(function(s){var v=(s||'대기').trim();return v.indexOf('철회')===0?'철회':(v==='승인'?'승인완료':v);})(f.Status)}">${f.Status||'대기'}</span>`)+row('신청일',fmtDate(f.RequestDate))+
       sec('차량 정보')+row('Vehicle Model',f.VehicleModel)+row('Plate Number',f.PlateNumber)+
       sec('사고 정보')+row('Accident Date/Time',f.AccidentDateTime)+row('Accident Type',f.AccidentType)+
       row('Passenger(s)',f.Passengers)+row('Location',f.Location)+
