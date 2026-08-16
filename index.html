@@ -611,6 +611,22 @@ function escHtml(s){
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+// ── SharePoint 다중 텍스트 필드 정리 ──
+// 여러 줄 텍스트는 <div class="ExternalClass...">본문</div> 형태로 감싸여 저장된다.
+// 이걸 그대로 escHtml에 넘기면 래퍼 태그가 화면에 글자로 찍힌다.
+// 반환값은 평문이므로, innerHTML에 넣을 때는 반드시 escHtml()을 다시 거쳐야 한다.
+function spText(s){
+  return String(s == null ? '' : s)
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/\s*(div|p|li|tr)\s*>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 const CLIENT_ID  = '432976c2-b43a-492e-8213-ece505fa1f51';
 const TENANT_ID  = '19cab1f5-21f4-44df-8ac6-96d6ca595203';
 const SITE_PATH  = 'startruckkorea.sharepoint.com:/sites/STK-DB:';
@@ -1637,7 +1653,7 @@ async function rrShowDetail(id){
       sec('차량 정보')+row('Vehicle Model',f.VehicleModel)+row('Plate Number',f.PlateNumber)+
       sec('사고 정보')+row('Accident Date/Time',f.AccidentDateTime)+row('Accident Type',f.AccidentType)+
       row('Passenger(s)',f.Passengers)+row('Location',f.Location)+
-      row('Description',`<div style="white-space:pre-wrap">${escHtml(f.Description||'-')}</div>`)+
+      row('Description',`<div style="white-space:pre-wrap">${escHtml(spText(f.Description)||'-')}</div>`)+
       sec('첨부파일')+filesHtml+apprHtml+
       (myPending?`<div style="display:flex;gap:10px;margin-top:14px"><button onclick="showConfirm(${myPending.id},'승인',${id},'RR')" class="btn-approve" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">✅ 승인</button><button onclick="showConfirm(${myPending.id},'반려',${id},'RR')" class="btn-reject" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">❌ 반려</button></div>`:'');
 
