@@ -622,6 +622,10 @@ function spText(s){
     .replace(/&nbsp;/gi, ' ')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    // SharePoint는 콜론·마침표·괄호 등을 숫자 엔티티(&#58; &#46; &#41; …)로 저장하는 경우가 있다.
+    // 이름 있는 엔티티만 처리하면 화면에 &#58; 가 글자 그대로 남는다.
+    .replace(/&#(\d+);/g, (m, d) => { const n = parseInt(d, 10); return (n>=32 && n<=1114111) ? String.fromCodePoint(n) : m; })
+    .replace(/&#x([0-9a-fA-F]+);/g, (m, x) => { const n = parseInt(x, 16); return (n>=32 && n<=1114111) ? String.fromCodePoint(n) : m; })
     .replace(/&amp;/g, '&')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
