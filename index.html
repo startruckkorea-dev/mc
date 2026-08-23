@@ -1424,7 +1424,8 @@ async function showDetail(id){
     const sec=t=>`<div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:6px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
     const row=(l,v,wrap)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value"${wrap?' style="white-space:pre-wrap"':''}>${v||'-'}</div></div>`;
 
-    let filesHtml='<div style="font-size:13px;color:#605e5c">첨부파일 없음</div>';
+    // 첨부가 없을 때는 「결재 이력이 없습니다.」와 같은 규칙(가운데 정렬 · 패딩)으로 표시한다.
+    let filesHtml='<div style="padding:12px;text-align:center;color:#a19f9d;font-size:.78rem">첨부파일이 없습니다.</div>';
     if(f.AttachedFiles){
       // SharePoint 여러줄텍스트 → HTML 태그 제거
       let cleanFiles = f.AttachedFiles;
@@ -1643,7 +1644,8 @@ async function rrShowDetail(id){
     const sec=t=>`<div style="margin:14px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:5px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
     const row=(l,v,wrap)=>`<div class="modal-row"><div class="modal-label">${l}</div><div class="modal-value"${wrap?' style="white-space:pre-wrap"':''}>${v||'-'}</div></div>`;
 
-    let filesHtml='<div style="font-size:13px;color:#605e5c">첨부파일 없음</div>';
+    // 첨부가 없을 때는 「결재 이력이 없습니다.」와 같은 규칙(가운데 정렬 · 패딩)으로 표시한다.
+    let filesHtml='<div style="padding:12px;text-align:center;color:#a19f9d;font-size:.78rem">첨부파일이 없습니다.</div>';
     if(f.AttachedFiles){
       let clean=f.AttachedFiles.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').trim();
       const entries=clean.split(/[;\n]+/).filter(e=>e.trim()&&e.includes('||'));
