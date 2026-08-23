@@ -1567,7 +1567,6 @@ async function loadUnifiedBadge(){
   }));
   const badge=document.getElementById('unif-badge');if(badge){badge.textContent=total;badge.style.display=total>0?'inline-block':'none';}
 }
-async function openUnifiedAppr(){ document.getElementById('unified-modal').classList.add('open'); document.getElementById('unified-body').innerHTML=''; await loadUnifiedData(); }
 function closeUnifiedAppr(){ document.getElementById('unified-modal').classList.remove('open'); closeUniDetail(); }
 async function loadUnifiedData(){
   if(!siteId||!user)return;
