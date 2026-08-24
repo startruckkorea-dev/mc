@@ -287,15 +287,17 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <div class="section-title">2. 사용 기간</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
         <span style="font-size:.82rem;font-weight:600;color:#323130;white-space:nowrap">Pickup Date</span>
-        <input type="date" id="f-pickup-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
-        <select id="f-pickup-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
-        <select id="f-pickup-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+        <input type="date" id="f-pickup-date" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
+        <select id="f-pickup-h" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
+        <select id="f-pickup-ampm" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
         <span style="color:#323130;font-size:1.2rem;font-weight:700;margin:0 6px">~</span>
         <span style="font-size:.82rem;font-weight:600;color:#323130;white-space:nowrap">Return Date</span>
-        <input type="date" id="f-return-date" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
-        <select id="f-return-h" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
-        <select id="f-return-ampm" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+        <input type="date" id="f-return-date" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
+        <select id="f-return-h" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
+        <select id="f-return-ampm" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
+        <span id="period-span" style="background:#eaf3fd;border:1px solid #b6d7f2;border-radius:11px;padding:3px 11px;font-size:.72rem;font-weight:600;color:#0b5fa5;white-space:nowrap"></span>
       </div>
+      <div id="period-msg" style="display:none;background:#fdf2f2;border:1px solid #f0c8c8;border-radius:4px;padding:8px 12px;font-size:.75rem;color:#a4262c;margin:-6px 0 12px;line-height:1.55"></div>
 
       <div class="section-title">3. Driver's Information</div>
       <div style="display:flex;gap:16px;margin-bottom:10px;align-items:center">
@@ -861,6 +863,7 @@ async function boot(account){
   const today=new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10);
   document.getElementById('f-pickup-date').value=today;
   document.getElementById('f-return-date').value=today;
+  mcCheckPeriod();
   // RR 시간 초기화
   const rrHSel=document.getElementById('rr-accident-h');
   h.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;if(v==='12')o.selected=true;rrHSel.appendChild(o);});
@@ -1091,6 +1094,53 @@ function switchTab(t){
   if(t==='admin'){dynLoadStart('전체 신청 불러오는 중');loadAdminList();}
 }
 
+// ── 사용 기간 검증 ────────────────────────────────────────
+// 화면은 12시간제(1~12 + AM/PM)라 문자열 비교로는 순서를 알 수 없다.
+// 24시간 기준 분 단위로 바꿔 비교한다.  12 AM = 0시,  12 PM = 12시
+function mcMinutes(dateStr, h, ampm){
+  if(!dateStr) return null;
+  let hh = parseInt(h,10);
+  if(isNaN(hh)) return null;
+  if(ampm==='AM') hh = (hh===12 ? 0 : hh);
+  else            hh = (hh===12 ? 12 : hh+12);
+  const d = new Date(dateStr+'T00:00:00');
+  if(isNaN(d)) return null;
+  return Math.floor(d.getTime()/60000) + hh*60;
+}
+function mcPeriodValues(){
+  return {
+    from: mcMinutes(document.getElementById('f-pickup-date').value,
+                    document.getElementById('f-pickup-h').value,
+                    document.getElementById('f-pickup-ampm').value),
+    to:   mcMinutes(document.getElementById('f-return-date').value,
+                    document.getElementById('f-return-h').value,
+                    document.getElementById('f-return-ampm').value)
+  };
+}
+// 입력할 때마다 즉시 알려준다. 상신할 때 처음 알면 이미 다 채운 뒤라 번거롭다.
+function mcCheckPeriod(){
+  const box = document.getElementById('period-msg');
+  const span = document.getElementById('period-span');
+  const { from, to } = mcPeriodValues();
+  const bad = (from!==null && to!==null && to <= from);
+  ['f-pickup-date','f-pickup-h','f-pickup-ampm','f-return-date','f-return-h','f-return-ampm']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.borderColor = bad ? '#a4262c' : '#d2d0ce'; });
+  if(!box) return !bad;
+  if(from===null || to===null){ box.style.display='none'; if(span) span.textContent=''; return true; }
+  if(bad){
+    box.style.display='block';
+    box.textContent = (to===from)
+      ? 'Return 일시가 Pickup 일시와 같습니다. 반납 시각을 뒤로 지정해 주세요.'
+      : 'Return 일시가 Pickup 일시보다 앞섭니다. 사용 기간을 다시 확인해 주세요.';
+    if(span) span.textContent='';
+  } else {
+    box.style.display='none'; box.textContent='';
+    const mins = to - from, dd = Math.floor(mins/1440), hh = Math.floor((mins%1440)/60);
+    if(span) span.textContent = (dd? dd+'일 ':'') + (hh? hh+'시간':'') || '0시간';
+  }
+  return !bad;
+}
+
 // ── Submit ──
 async function submitForm(){
   const company=document.getElementById('f-company').value;
@@ -1103,6 +1153,16 @@ async function submitForm(){
   if(!dept){alert('Department를 선택해주세요.');return;}
   if(!purpose){alert('Purpose를 입력해주세요.');return;}
   if(!pickupDate||!returnDate){alert('사용 기간을 입력해주세요.');return;}
+  // Return 이 Pickup 보다 앞서거나 같으면 상신을 막는다.
+  const _pv = mcPeriodValues();
+  if(_pv.from!==null && _pv.to!==null && _pv.to <= _pv.from){
+    mcCheckPeriod();
+    alert(_pv.to === _pv.from
+      ? 'Return 일시가 Pickup 일시와 같습니다.\n반납 시각을 뒤로 지정해 주세요.'
+      : 'Return 일시가 Pickup 일시보다 앞섭니다.\n사용 기간을 다시 확인해 주세요.');
+    document.getElementById('f-return-date').focus();
+    return;
+  }
   if(!driverName){alert('운전자 정보를 입력해주세요.');return;}
   // MC: Line Manager 없음, 결재자는 자동 지정
 
