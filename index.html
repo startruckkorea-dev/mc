@@ -426,11 +426,6 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <select id="list-status" onchange="renderMyList()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.78rem;font-family:inherit">
         <option value="">전체 상태</option><option>대기</option><option>승인완료</option><option>반려</option><option>철회</option>
       </select>
-      <select id="list-dept" onchange="renderMyList()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 10px;font-size:.78rem;font-family:inherit">
-        <option value="">전체 부서</option>
-        <option>Sales</option><option>Marketing/CEO office</option><option>F&amp;C</option>
-        <option>CSP</option><option>PTB</option><option>PMM</option><option>Unimog</option><option>ND</option>
-      </select>
       <span style="font-size:.78rem;color:#605e5c;font-weight:500;margin-left:auto" id="list-count"></span>
     </div>
     <div class="card" style="padding:0;overflow-x:auto">
@@ -1387,16 +1382,14 @@ async function loadMyList(){
 let _myListRaw=[];
 function renderMyList(){
   const fStatus=(document.getElementById('list-status')||{}).value||'';
-  const fDept=(document.getElementById('list-dept')||{}).value||'';
   const rows=_myListRaw.filter(i=>{
     const f=i.fields;
     // 철회(잠김) 같은 파생 상태도 「철회」로 묶어서 걸린다.
     if(fStatus && !String(f.Status||'대기').startsWith(fStatus)) return false;
-    if(fDept && String(f.Department||'')!==fDept) return false;
     return true;
   });
   const cnt=document.getElementById('list-count');
-  if(cnt) cnt.textContent=(fStatus||fDept)?`필터 ${rows.length}건 / 전체 ${_myListRaw.length}건`:`총 ${_myListRaw.length}건`;
+  if(cnt) cnt.textContent=fStatus?`필터 ${rows.length}건 / 전체 ${_myListRaw.length}건`:`총 ${_myListRaw.length}건`;
   pgSet('list',rows,(item,idx)=>{
     const f=item.fields,type=item._type;
     const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.64rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.64rem;font-weight:700">MC</span>';
@@ -1408,7 +1401,7 @@ function renderMyList(){
       ? `<td title="${escAttr(period)}" style="overflow:hidden;text-overflow:ellipsis">${escAttr(period)}</td>`
       : '<td><span style="color:#c8c6c4">-</span></td>';
     return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
-  }, (document.getElementById('list-status')||{}).value||(document.getElementById('list-dept')||{}).value ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 7);
+  }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 7);
 }
 // 속성 안에 넣을 값은 따옴표까지 막아야 속성이 끊기지 않는다.
 function escAttr(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
