@@ -1497,6 +1497,15 @@ async function loadAdminList(){
   try{
     const adminType=(document.getElementById('admin-type')||{}).value||'MC';
     const listName=adminType==='RR'?RR_REQ:LIST_REQ;
+    // Repair Report 에는 부서 항목이 없다. 아래 걸러내기도 Mobility Car 에서만
+    // 하므로, 눌러도 아무 일이 없는 선택 상자를 숨긴다.
+    // 숨길 때 값도 비운다 — 남겨 두면 Mobility Car 로 돌아왔을 때 보이지 않는
+    // 조건이 걸린 채로 목록이 줄어 이유를 알 수 없게 된다.
+    const _deptEl=document.getElementById('admin-dept');
+    if(_deptEl){
+      if(adminType==='RR'){ _deptEl.value=''; _deptEl.style.display='none'; }
+      else { _deptEl.style.display=''; }
+    }
     const data=await apiAll('/sites/'+siteId+'/lists/'+listName+'/items?$expand=fields&$top=500');
     const status=document.getElementById('admin-status').value;
     const dept=document.getElementById('admin-dept').value;
