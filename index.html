@@ -1395,9 +1395,9 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     _myListRaw=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트 — 제목과 상태 사이에 사용기간을 둔다.
-    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:44px">번호</th><th style="width:56px">구분</th><th>제목</th><th style="width:270px">사용기간</th><th style="width:80px">상태</th><th style="width:120px">신청일</th><th style="width:90px;text-align:center">Withdraw</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:44px">번호</th><th style="width:56px">구분</th><th>제목</th><th style="width:250px">사용기간</th><th style="width:170px">운전자</th><th style="width:90px">Department</th><th style="width:100px">Car Number</th><th style="width:80px">상태</th><th style="width:120px">신청일</th><th style="width:90px;text-align:center">Withdraw</th>';
     renderMyList();
-  }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="7" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
+  }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="10" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
 
 // 조회한 내 신청 원본. 필터는 이 배열을 다시 걸러 그리기만 하므로
@@ -1423,8 +1423,13 @@ function renderMyList(){
     const periodCell=period
       ? `<td title="${escAttr(period)}" style="overflow:hidden;text-overflow:ellipsis">${escAttr(period)}</td>`
       : '<td><span style="color:#c8c6c4">-</span></td>';
-    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
-  }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 7);
+    // Repair Report 에는 운전자·부서·차량번호가 없다. 빈칸으로 두면 값이 안 온
+    // 건지 원래 없는 건지 구분되지 않으므로 흐린 「-」 로 둔다.
+    const _mcCell=(v)=>{const t=escAttr(v);
+      return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
+               : '<td><span style="color:#c8c6c4">-</span></td>';};
+    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${_mcCell(f.DriverName)}${_mcCell(f.Department)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
+  }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 10);
 }
 // 속성 안에 넣을 값은 따옴표까지 막아야 속성이 끊기지 않는다.
 function escAttr(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1451,19 +1456,23 @@ async function loadApprovalQueue(){
     // 헤더 업데이트
     // 첫 열은 행 번호다. 예전에는 머리글이 「신청번호」인데 RequestID 를 그려
     // 내 신청 목록에서는 3, 결재함에서는 107 처럼 같은 건의 번호가 서로 달랐다.
-    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:44px">번호</th><th style="width:56px">구분</th><th>신청자</th><th>제목</th><th style="width:80px">상태</th><th style="width:120px">신청일</th><th style="width:132px">처리</th>';
+    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:44px">번호</th><th style="width:150px">신청자</th><th style="width:56px">구분</th><th>제목</th><th style="width:230px">사용기간</th><th style="width:130px">운전자</th><th style="width:90px">Department</th><th style="width:100px">Car Number</th><th style="width:80px">상태</th><th style="width:116px">신청일</th><th style="width:120px">처리</th>';
     const rows=mine.map((item,idx)=>{
       const f=item.fields,type=item._type;
       const rf=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
       const badge=type==='RR'?'<span style="background:#fff0f0;color:#c50f1f;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">RR</span>':'<span style="background:#e8fff0;color:#006b3e;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700">MC</span>';
       const summary=rf.Title||'';
       const detailFn=type==='RR'?'rrShowDetail':'showDetail';
-      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td style="font-size:.78rem">${rf.RequesterEmail||''}</td><td style="font-size:.78rem">${summary}</td><td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
+      // Repair Report 에는 사용기간·운전자·부서·차량번호가 없다. 흐린 「-」 로 둔다.
+      const _c=(v)=>{const t=escAttr(v);
+        return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
+                 : '<td><span style="color:#c8c6c4">-</span></td>';};
+      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${_c(rf.DriverName)}${_c(rf.Department)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
     });
     dynLoadEnd();
-    pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',7);
+    pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',11);
     const badge=document.getElementById('appr-badge');badge.textContent=mine.length;badge.style.display=mine.length?'inline':'none';
-  }catch(e){document.getElementById('appr-body').innerHTML=`<tr><td colspan="7" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
+  }catch(e){document.getElementById('appr-body').innerHTML=`<tr><td colspan="11" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
 
 async function checkApprover(){
