@@ -221,8 +221,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 /* 목록 세 탭 — 글자를 한 단계 줄이고 행 간격을 좁혀 한 화면에 더 담는다
    (GW·BP 목록 표와 같은 기준). 배지도 함께 줄여야 셀 높이가 실제로 낮아진다. */
 #tab-list .list-table,#tab-appr .list-table,#tab-admin .list-table{font-size:.74rem}
-#tab-list .list-table th,#tab-appr .list-table th,#tab-admin .list-table th{font-size:.68rem;padding:6px 8px;white-space:normal;line-height:1.25}
-#tab-list .list-table td,#tab-appr .list-table td,#tab-admin .list-table td{padding:5px 8px}
+#tab-list .list-table th,#tab-appr .list-table th,#tab-admin .list-table th{font-size:.68rem;padding:7px 8px;white-space:normal;line-height:16px}
+#tab-list .list-table td,#tab-appr .list-table td,#tab-admin .list-table td{padding:6px 8px}
 #tab-list .list-table [class^="badge-"],#tab-appr .list-table [class^="badge-"],
 #tab-admin .list-table [class^="badge-"]{font-size:.64rem;padding:1px 7px}
 /* 관리자 표는 열이 10개다. 폭을 고정해 카드 안에 들어오게 하고, 넘치는 셀은
@@ -2087,6 +2087,18 @@ function _wdBtn(itemId, aprList, reqList, status) {
 <style>
 @keyframes noAuthIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
 #no-auth-modal.show{display:flex!important}
+
+/* ── 목록 표 행 높이 기준 (APS 연동 10개 시스템 공통) ────────────────
+   시스템마다 세로 여백이 9px 과 5px 로 갈려 행 높이가 37px / 27px 로 달랐다.
+   같은 결재 흐름을 오가는데 표마다 밀도가 달라 보인다.
+   줄높이를 px 로 못 박아 글자 크기가 달라도 행 높이가 같아지게 한다.
+   가로 여백과 글자 크기는 열 수에 맞춰 시스템별로 이미 정한 값이라 두었다. */
+.list-table td { padding-top:6px; padding-bottom:6px; line-height:20px; }
+.list-table th { padding-top:7px; padding-bottom:7px; line-height:16px; }
+/* 배지는 inline-block 이라 자기 높이로 행을 밀어 올린다. 줄높이를 함께 낮춘다. */
+.list-table td .badge,
+.list-table td [class^="badge-"],
+.list-table td [class*=" badge-"] { line-height:1.25; }
 </style>
 </body>
 </html>
