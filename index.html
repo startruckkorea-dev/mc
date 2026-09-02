@@ -1342,6 +1342,33 @@ function resetForm(){
 // ── Pagination ──
 const PAGE_SIZE=20,_pgState={};
 function pgSet(id,items,renderer,empty,cols){_pgState[id]={items,page:0,renderer,empty,cols};pgRender(id);}
+// ── 페이지 이동 (APS 공통) ────────────────────────────────────────────
+// 시스템마다 1…234…10 처럼 생략 표시가 달라 지금이 어디쯤인지 가늠하기 어려웠다.
+// 최대 7칸을 이어서 보이는 창으로 통일한다. 창은 끝에 가까워도 7칸을 채워
+// 버튼 위치가 흔들리지 않는다.
+// 처음(«)·마지막(») 버튼을 둔다 — 20쪽이면 › 를 열아홉 번 눌러야 끝에 닿는다.
+function apsPagerHtml(cur, pages, mk) {
+  if (!pages || pages <= 1) return '';
+  cur = Math.max(0, Math.min(cur, pages - 1));
+  const b = (on, act, label, page, title) =>
+    '<button ' + (on ? 'onclick="' + mk(page) + '"' : 'disabled') +
+    (title ? ' title="' + title + '"' : '') +
+    ' style="min-width:30px;padding:4px 9px;border-radius:4px;font-size:.8rem;font-family:inherit;' +
+    'border:1px solid ' + (act ? '#0078d4' : on ? '#d2d0ce' : '#edebe9') + ';' +
+    'background:' + (act ? '#0078d4' : on ? '#fff' : '#f3f2f1') + ';' +
+    'color:' + (act ? '#fff' : on ? '#323130' : '#a19f9d') + ';' +
+    'font-weight:' + (act ? '700' : '400') + ';' +
+    'cursor:' + (on ? 'pointer' : 'default') + '">' + label + '</button>';
+  const start = Math.max(0, Math.min(cur - 3, pages - 7));
+  const end   = Math.min(pages, start + 7);
+  let h = b(cur > 0, false, '&laquo;',  0,        '처음으로')
+        + b(cur > 0, false, '&lsaquo;', cur - 1,  '이전');
+  for (let p = start; p < end; p++) h += b(true, p === cur, String(p + 1), p, '');
+  h += b(cur < pages - 1, false, '&rsaquo;', cur + 1,   '다음')
+     + b(cur < pages - 1, false, '&raquo;',  pages - 1, '마지막으로');
+  return h;
+}
+
 function pgRender(id){
   const s=_pgState[id];if(!s)return;
   const tbody=document.getElementById(id+'-body');if(!tbody)return;
@@ -1351,12 +1378,7 @@ function pgRender(id){
   tbody.innerHTML=slice.length?slice.map((item,idx)=>s.renderer(item,s.items.length-(cur*PAGE_SIZE+idx)-1)).join(''):`<tr><td colspan="${s.cols}" style="text-align:center;padding:32px;color:#605e5c">${s.empty}</td></tr>`;
   dynLoadEnd();
   let pg=document.getElementById(id+'-pagination');if(!pg)return;
-  if(pages<=1){pg.innerHTML='';return;}
-  const bs=(a,c)=>{const base='border-radius:4px;padding:4px 9px;font-size:.8rem;cursor:pointer;border:1px solid ';return c?base+'#0078d4;background:#0078d4;color:#fff;font-weight:700':a?base+'#d2d0ce;background:#fff;color:#323130':base+'#edebe9;background:#f3f2f1;color:#a19f9d;cursor:default';};
-  let html=`<button onclick="pgGo('${id}',${cur-1})" style="${bs(cur>0)}" ${cur===0?'disabled':''}>&#8249;</button>`;
-  for(let p=0;p<pages;p++){if(pages>7&&p>0&&p<pages-1&&Math.abs(p-cur)>2){if(p===cur-3||p===cur+3)html+='<span style="padding:0 4px">…</span>';continue;}html+=`<button onclick="pgGo('${id}',${p})" style="${bs(true,p===cur)}">${p+1}</button>`;}
-  html+=`<button onclick="pgGo('${id}',${cur+1})" style="${bs(cur<pages-1)}" ${cur===pages-1?'disabled':''}>&#8250;</button>`;
-  pg.innerHTML=html;
+  pg.innerHTML=apsPagerHtml(cur, pages, function(p){ return "pgGo('" + id + "'," + p + ")"; });
 }
 function pgGo(id,p){if(!_pgState[id])return;const tot=_pgState[id].items.length,pages=Math.ceil(tot/PAGE_SIZE);if(p<0||p>=pages)return;_pgState[id].page=p;pgRender(id);document.getElementById(id+'-body')?.closest('table')?.scrollIntoView({behavior:'smooth',block:'start'});}
 
