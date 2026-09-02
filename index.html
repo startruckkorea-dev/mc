@@ -232,6 +232,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
    그래서 「제목」이 세로로 서고 「Car Number」가 두 줄로 접혔다.
    세 탭 모두 고정으로 두어 지정한 폭이 그대로 지켜지게 한다. */
 #tab-list .list-table,#tab-appr .list-table,#tab-admin .list-table{table-layout:fixed}
+/* 전역 .list-table{min-width:960px} 이 남아 있으면 카드가 그보다 좁을 때
+   표가 카드를 넘겨 가로 스크롤이 생긴다. 폭을 % 로 주므로 하한이 필요 없다. */
+#tab-list .list-table,#tab-appr .list-table{min-width:0}
 /* 고정 폭에서는 넘치는 내용이 잘리므로 말줄임으로 접고 전체는 title 로 보인다. */
 #tab-list .list-table td,#tab-appr .list-table td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 머리글은 한 줄로 둔다. 줄바꿈을 허용하면 좁을 때 글자가 세로로 선다. */
@@ -442,7 +445,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     </div>
     <div class="card" style="padding:0;overflow-x:auto">
       <table class="list-table">
-        <thead><tr><th>번호</th><th>Company</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th></tr></thead>
+        <!-- 실제 머리글은 loadMyList 가 다시 씁니다(구분·운전자·Car Number 포함 10열).
+     여기 있는 것은 스크립트가 돌기 전에 잠깐 보이는 뼈대입니다. -->
+<thead><tr><th>번호</th><th>구분</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>Car Number</th><th>상태</th><th>신청일</th><th>Withdraw</th></tr></thead>
         <tbody id="list-body"></tbody>
       </table>
     </div>
@@ -453,7 +458,8 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
   <div id="tab-appr" style="display:none">
     <div class="card" style="padding:0;overflow-x:auto">
       <table class="list-table">
-        <thead><tr><th>신청번호</th><th>신청자</th><th>Department</th><th>사용기간</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+        <!-- 실제 머리글은 loadApprovalQueue 가 다시 씁니다(11열). -->
+<thead><tr><th>번호</th><th>신청자</th><th>구분</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>Car Number</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
         <tbody id="appr-body"></tbody>
       </table>
     </div>
@@ -1408,7 +1414,7 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     _myListRaw=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트 — 제목과 상태 사이에 사용기간을 둔다.
-    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:44px">번호</th><th style="width:56px">구분</th><th>제목</th><th style="width:250px">사용기간</th><th style="width:190px">운전자</th><th style="width:90px">Department</th><th style="width:110px">Car Number</th><th style="width:80px">상태</th><th style="width:120px">신청일</th><th style="width:90px;text-align:center">Withdraw</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3.5%">번호</th><th style="width:4.5%">구분</th><th style="width:15%">제목</th><th style="width:19%">사용기간</th><th style="width:15%">운전자</th><th style="width:7.5%">Department</th><th style="width:9%">Car Number</th><th style="width:6.5%">상태</th><th style="width:11%">신청일</th><th style="width:9%;text-align:center">Withdraw</th>';
     renderMyList();
   }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="10" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
@@ -1469,7 +1475,7 @@ async function loadApprovalQueue(){
     // 헤더 업데이트
     // 첫 열은 행 번호다. 예전에는 머리글이 「신청번호」인데 RequestID 를 그려
     // 내 신청 목록에서는 3, 결재함에서는 107 처럼 같은 건의 번호가 서로 달랐다.
-    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:44px">번호</th><th style="width:170px">신청자</th><th style="width:56px">구분</th><th>제목</th><th style="width:230px">사용기간</th><th style="width:180px">운전자</th><th style="width:86px">Department</th><th style="width:106px">Car Number</th><th style="width:76px">상태</th><th style="width:116px">신청일</th><th style="width:116px">처리</th>';
+    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:12%">신청자</th><th style="width:4%">구분</th><th style="width:13%">제목</th><th style="width:17%">사용기간</th><th style="width:13%">운전자</th><th style="width:7%">Department</th><th style="width:8.5%">Car Number</th><th style="width:6%">상태</th><th style="width:9.5%">신청일</th><th style="width:7%">처리</th>';
     const rows=mine.map((item,idx)=>{
       const f=item.fields,type=item._type;
       const rf=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
