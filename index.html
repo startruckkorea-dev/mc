@@ -352,7 +352,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       </div>
 
       <div class="section-title">2. 사용 기간</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
         <span style="font-size:.82rem;font-weight:600;color:#323130;white-space:nowrap">Pickup Date</span>
         <input type="date" id="f-pickup-date" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 8px;font-size:.82rem;font-family:inherit">
         <select id="f-pickup-h" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"></select>
@@ -364,7 +364,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
         <select id="f-return-ampm" onchange="mcCheckPeriod()" style="border:1px solid #d2d0ce;border-radius:4px;padding:6px 4px;font-size:.82rem;font-family:inherit"><option>AM</option><option selected>PM</option></select>
         <span id="period-span" style="background:#eaf3fd;border:1px solid #b6d7f2;border-radius:11px;padding:3px 11px;font-size:.72rem;font-weight:600;color:#0b5fa5;white-space:nowrap"></span>
       </div>
-      <div id="period-msg" style="display:none;font-size:.72rem;font-weight:600;color:#a4262c;margin:2px 0 12px;line-height:1.45"></div>
+      <div id="period-msg" style="display:none;font-size:.72rem;font-weight:600;color:#a4262c;margin:0 0 12px;line-height:1.45"></div>
 
       <div class="section-title">3. Driver's Information</div>
       <div style="display:flex;gap:16px;margin-bottom:10px;align-items:center">
@@ -1235,9 +1235,10 @@ function mcCheckPeriod(){
   if(from===null || to===null){ box.style.display='none'; if(span) span.textContent=''; return true; }
   if(bad){
     box.style.display='block';
-    box.textContent = (to===from)
+    // 앞의 ⚠ 는 textContent 로 넣는다 — innerHTML 이 아니므로 태그로 해석될 여지가 없다.
+    box.textContent = '⚠ ' + ((to===from)
       ? 'Return 일시가 Pickup 일시와 같습니다. 반납 시각을 뒤로 지정해 주세요.'
-      : 'Return 일시가 Pickup 일시보다 앞섭니다. 사용 기간을 다시 확인해 주세요.';
+      : 'Return 일시가 Pickup 일시보다 앞섭니다. 사용 기간을 다시 확인해 주세요.');
     if(span) span.textContent='';
   } else {
     box.style.display='none'; box.textContent='';
@@ -1421,7 +1422,7 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     _myListRaw=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트 — 제목과 상태 사이에 사용기간을 둔다.
-    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:4%">구분</th><th style="width:17%">제목</th><th style="width:22%">사용기간</th><th style="width:9%">운전자</th><th style="width:9%">Department</th><th style="width:11%">Car Number</th><th style="width:7%">상태</th><th style="width:12%">신청일</th><th style="width:6%;text-align:center">Withdraw</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:4%">구분</th><th style="width:15%">제목</th><th style="width:20%">사용기간</th><th style="width:15%">운전자</th><th style="width:8%">Department</th><th style="width:10%">Car Number</th><th style="width:6%">상태</th><th style="width:12%">신청일</th><th style="width:7%;text-align:center">Withdraw</th>';
     renderMyList();
   }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="10" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
@@ -1454,15 +1455,10 @@ function renderMyList(){
     // 운전자 값은 「이름 + 부서 + (영문명)」 형태다. 부서는 옆 Department 열에
     // 이미 있고 영문명은 같은 사람이라, 목록에서는 이름만 남긴다.
     // 전체 값은 title 로 그대로 보인다. 형태가 다르면 첫 낱말만 쓴다.
-    const _drvShort=(v)=>{const s=String(v==null?'':v).trim();
-      if(!s) return '';
-      const t=s.replace(/\s*\([^)]*\)\s*$/,'');
-      const m=t.match(/^([가-힣]{2,4})\b/);
-      return m ? m[1] : t.split(/\s+/)[0];};
     const _mcCell=(v)=>{const t=escAttr(v);
       return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
                : '<td><span style="color:#c8c6c4">-</span></td>';};
-    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${f.DriverName?`<td title="${escAttr(f.DriverName)}" style="overflow:hidden;text-overflow:ellipsis">${escAttr(_drvShort(f.DriverName))}</td>`:'<td><span style="color:#c8c6c4">-</span></td>'}${_mcCell(f.Department)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
+    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${_mcCell(f.DriverName)}${_mcCell(f.Department)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
   }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 10);
 }
 // 속성 안에 넣을 값은 따옴표까지 막아야 속성이 끊기지 않는다.
@@ -1490,7 +1486,7 @@ async function loadApprovalQueue(){
     // 헤더 업데이트
     // 첫 열은 행 번호다. 예전에는 머리글이 「신청번호」인데 RequestID 를 그려
     // 내 신청 목록에서는 3, 결재함에서는 107 처럼 같은 건의 번호가 서로 달랐다.
-    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:2.5%">번호</th><th style="width:12%">신청자</th><th style="width:3.5%">구분</th><th style="width:14%">제목</th><th style="width:19%">사용기간</th><th style="width:8%">운전자</th><th style="width:8%">Department</th><th style="width:9%">Car Number</th><th style="width:6%">상태</th><th style="width:10%">신청일</th><th style="width:8%">처리</th>';
+    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:2.5%">번호</th><th style="width:11%">신청자</th><th style="width:3.5%">구분</th><th style="width:13%">제목</th><th style="width:18%">사용기간</th><th style="width:14%">운전자</th><th style="width:7%">Department</th><th style="width:8.5%">Car Number</th><th style="width:5.5%">상태</th><th style="width:9%">신청일</th><th style="width:8%">처리</th>';
     const rows=mine.map((item,idx)=>{
       const f=item.fields,type=item._type;
       const rf=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
@@ -1499,15 +1495,10 @@ async function loadApprovalQueue(){
       const detailFn=type==='RR'?'rrShowDetail':'showDetail';
       // Repair Report 에는 사용기간·운전자·부서·차량번호가 없다. 흐린 「-」 로 둔다.
       // 운전자는 이름만 남긴다 (내 신청 목록과 같은 규칙). 전체는 title 로 보인다.
-      const _dv=(v)=>{const x=String(v==null?'':v).trim();
-        if(!x) return '';
-        const t=x.replace(/\s*\([^)]*\)\s*$/,'');
-        const m=t.match(/^([가-힣]{2,4})\b/);
-        return m ? m[1] : t.split(/\s+/)[0];};
       const _c=(v)=>{const t=escAttr(v);
         return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
                  : '<td><span style="color:#c8c6c4">-</span></td>';};
-      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${rf.DriverName?`<td title="${escAttr(rf.DriverName)}" style="overflow:hidden;text-overflow:ellipsis">${escAttr(_dv(rf.DriverName))}</td>`:'<td><span style="color:#c8c6c4">-</span></td>'}${_c(rf.Department)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
+      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${_c(rf.DriverName)}${_c(rf.Department)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
     });
     dynLoadEnd();
     pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',11);
