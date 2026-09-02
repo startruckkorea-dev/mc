@@ -221,8 +221,10 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 .list-table td{padding:9px 12px;border-bottom:1px solid #edebe9;color:#323130;white-space:nowrap}
 /* 목록 세 탭 — 글자를 한 단계 줄이고 행 간격을 좁혀 한 화면에 더 담는다
    (GW·BP 목록 표와 같은 기준). 배지도 함께 줄여야 셀 높이가 실제로 낮아진다. */
-#tab-list .list-table,#tab-appr .list-table,#tab-admin .list-table{font-size:.74rem}
-#tab-list .list-table th,#tab-appr .list-table th,#tab-admin .list-table th{font-size:.68rem;padding:7px 8px;white-space:normal;line-height:16px}
+/* 열이 10~11개라 한 화면에 담으려면 본문을 한 단계 더 낮춘다.
+   행 높이 기준(줄높이 20px)은 그대로라 표의 밀도는 유지된다. */
+#tab-list .list-table,#tab-appr .list-table,#tab-admin .list-table{font-size:.70rem}
+#tab-list .list-table th,#tab-appr .list-table th,#tab-admin .list-table th{font-size:.64rem;padding:7px 6px;white-space:nowrap;line-height:16px}
 #tab-list .list-table td,#tab-appr .list-table td,#tab-admin .list-table td{padding:6px 8px}
 #tab-list .list-table [class^="badge-"],#tab-appr .list-table [class^="badge-"],
 #tab-admin .list-table [class^="badge-"]{font-size:.64rem;padding:1px 7px}
@@ -243,6 +245,12 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
    말줄임에 걸리면 버튼이 잘려 누를 수 없다. 그 열만 뺀다. */
 #tab-list .list-table td:last-child,
 #tab-appr .list-table td:last-child{overflow:visible;text-overflow:clip}
+/* 승인·반려 버튼이 padding 14px·글자 .8rem 이라 두 개면 129px 이 필요했다.
+   처리 열이 그보다 좁아 버튼이 셀 밖으로 밀렸다(마지막 열은 말줄임 제외라 잘리지도 않는다).
+   버튼을 표 글자에 맞춰 줄인다. 반려의 width:60px 고정도 푼다. */
+#tab-appr .list-table .btn-approve,
+#tab-appr .list-table .btn-reject{padding:2px 6px;font-size:.64rem;width:auto;min-width:0}
+#tab-appr .list-table td:last-child{white-space:nowrap;padding-left:4px;padding-right:4px}
 #tab-admin .list-table td{overflow:hidden;text-overflow:ellipsis}
 /* 처리 열(승인·반려 버튼)은 말줄임에서 뺀다. 버튼이 잘리면 누를 수 없다. */
 #tab-appr .list-table td:last-child{overflow:visible;text-overflow:clip;white-space:nowrap}
@@ -1414,7 +1422,7 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     _myListRaw=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트 — 제목과 상태 사이에 사용기간을 둔다.
-    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3.5%">번호</th><th style="width:4.5%">구분</th><th style="width:15%">제목</th><th style="width:19%">사용기간</th><th style="width:15%">운전자</th><th style="width:7.5%">Department</th><th style="width:9%">Car Number</th><th style="width:6.5%">상태</th><th style="width:11%">신청일</th><th style="width:9%;text-align:center">Withdraw</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:4%">구분</th><th style="width:17%">제목</th><th style="width:22%">사용기간</th><th style="width:9%">운전자</th><th style="width:9%">Department</th><th style="width:11%">Car Number</th><th style="width:7%">상태</th><th style="width:12%">신청일</th><th style="width:6%;text-align:center">Withdraw</th>';
     renderMyList();
   }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="10" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
@@ -1444,10 +1452,18 @@ function renderMyList(){
       : '<td><span style="color:#c8c6c4">-</span></td>';
     // Repair Report 에는 운전자·부서·차량번호가 없다. 빈칸으로 두면 값이 안 온
     // 건지 원래 없는 건지 구분되지 않으므로 흐린 「-」 로 둔다.
+    // 운전자 값은 「이름 + 부서 + (영문명)」 형태다. 부서는 옆 Department 열에
+    // 이미 있고 영문명은 같은 사람이라, 목록에서는 이름만 남긴다.
+    // 전체 값은 title 로 그대로 보인다. 형태가 다르면 첫 낱말만 쓴다.
+    const _drvShort=(v)=>{const s=String(v==null?'':v).trim();
+      if(!s) return '';
+      const t=s.replace(/\s*\([^)]*\)\s*$/,'');
+      const m=t.match(/^([가-힣]{2,4})\b/);
+      return m ? m[1] : t.split(/\s+/)[0];};
     const _mcCell=(v)=>{const t=escAttr(v);
       return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
                : '<td><span style="color:#c8c6c4">-</span></td>';};
-    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${_mcCell(f.DriverName)}${_mcCell(f.Department)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
+    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${f.DriverName?`<td title="${escAttr(f.DriverName)}" style="overflow:hidden;text-overflow:ellipsis">${escAttr(_drvShort(f.DriverName))}</td>`:'<td><span style="color:#c8c6c4">-</span></td>'}${_mcCell(f.Department)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
   }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 10);
 }
 // 속성 안에 넣을 값은 따옴표까지 막아야 속성이 끊기지 않는다.
@@ -1475,7 +1491,7 @@ async function loadApprovalQueue(){
     // 헤더 업데이트
     // 첫 열은 행 번호다. 예전에는 머리글이 「신청번호」인데 RequestID 를 그려
     // 내 신청 목록에서는 3, 결재함에서는 107 처럼 같은 건의 번호가 서로 달랐다.
-    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:12%">신청자</th><th style="width:4%">구분</th><th style="width:13%">제목</th><th style="width:17%">사용기간</th><th style="width:13%">운전자</th><th style="width:7%">Department</th><th style="width:8.5%">Car Number</th><th style="width:6%">상태</th><th style="width:9.5%">신청일</th><th style="width:7%">처리</th>';
+    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:2.5%">번호</th><th style="width:12%">신청자</th><th style="width:3.5%">구분</th><th style="width:14%">제목</th><th style="width:19%">사용기간</th><th style="width:8%">운전자</th><th style="width:8%">Department</th><th style="width:9%">Car Number</th><th style="width:6%">상태</th><th style="width:10%">신청일</th><th style="width:8%">처리</th>';
     const rows=mine.map((item,idx)=>{
       const f=item.fields,type=item._type;
       const rf=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
@@ -1483,10 +1499,16 @@ async function loadApprovalQueue(){
       const summary=rf.Title||'';
       const detailFn=type==='RR'?'rrShowDetail':'showDetail';
       // Repair Report 에는 사용기간·운전자·부서·차량번호가 없다. 흐린 「-」 로 둔다.
+      // 운전자는 이름만 남긴다 (내 신청 목록과 같은 규칙). 전체는 title 로 보인다.
+      const _dv=(v)=>{const x=String(v==null?'':v).trim();
+        if(!x) return '';
+        const t=x.replace(/\s*\([^)]*\)\s*$/,'');
+        const m=t.match(/^([가-힣]{2,4})\b/);
+        return m ? m[1] : t.split(/\s+/)[0];};
       const _c=(v)=>{const t=escAttr(v);
         return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
                  : '<td><span style="color:#c8c6c4">-</span></td>';};
-      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${_c(rf.DriverName)}${_c(rf.Department)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
+      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${rf.DriverName?`<td title="${escAttr(rf.DriverName)}" style="overflow:hidden;text-overflow:ellipsis">${escAttr(_dv(rf.DriverName))}</td>`:'<td><span style="color:#c8c6c4">-</span></td>'}${_c(rf.Department)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
     });
     dynLoadEnd();
     pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',11);
