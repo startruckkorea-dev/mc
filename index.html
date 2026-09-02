@@ -1160,12 +1160,11 @@ function checkMcFileSize(input){
 
 // ── Tab ──
 function switchTab(t){
-  // 관리자 표는 열이 10개라 960px 로는 좁아 상태·신청일이 가로 스크롤 뒤로 숨었다.
-  // 목록 세 탭에서만 1280px 로 넓힌다 (GW·ACC·IT·BP 와 같은 폭).
-  // 신청서 작성은 입력란이 지나치게 늘어나므로 960px 를 유지한다.
+  // 목록 세 탭은 열이 10~11개라 960px 로는 좁다. 1440px 로 넓힌다.
+  // 카드는 padding:0 이므로 가용 = 1440 − #app 좌우 여백 32 = 1408px.
+  // 신청서 작성 두 탭은 입력란이 지나치게 늘어나므로 960px 를 유지한다.
+  // 폭을 정하는 곳은 여기 한 군데뿐이어야 한다.
   const _appEl = document.getElementById('app');
-  // 내 신청 목록 10열 · 결재함 11열이라 1280px 로도 모자라 머리글이 세로로 접혔다.
-  // 1440px 로 넓힌다. 가용 = 1440 − 좌우 여백 32 − 카드 여백 48 = 1360px.
   if (_appEl) _appEl.style.maxWidth = ['list','appr','admin'].includes(t) ? '1440px' : '960px';
   if (t === 'admin') {
     if (!_configLoaded) {
@@ -1194,8 +1193,8 @@ function switchTab(t){
     const btn=document.getElementById('tab-'+n+'-btn');
     if(btn)btn.classList.toggle('active',n===t);
   });
-  const appEl=document.getElementById('app');
-  if(appEl)appEl.style.maxWidth=t==='admin'?'1280px':'960px';
+  // 폭은 이 함수 맨 앞에서 이미 정한다(목록 세 탭 1440px). 여기서 다시 쓰면
+  // 나중 값이 이겨 되돌아간다 — 그래서 표가 960px 안에 갇혀 스크롤이 생겼다.
   if(t==='list'){dynLoadStart('신청 목록 불러오는 중');loadMyList();}
   if(t==='appr'){dynLoadStart('결재 정보 확인 중');loadApprovalQueue();}
   if(t==='admin'){dynLoadStart('전체 신청 불러오는 중');loadAdminList();}
