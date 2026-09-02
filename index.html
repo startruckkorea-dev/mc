@@ -455,7 +455,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
       <table class="list-table">
         <!-- 실제 머리글은 loadMyList 가 다시 씁니다(구분·운전자·Car Number 포함 10열).
      여기 있는 것은 스크립트가 돌기 전에 잠깐 보이는 뼈대입니다. -->
-<thead><tr><th>번호</th><th>구분</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>Car Number</th><th>상태</th><th>신청일</th><th>Withdraw</th></tr></thead>
+<thead><tr><th>번호</th><th>구분</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>Car Model</th><th>Car Number</th><th>상태</th><th>신청일</th><th>Withdraw</th></tr></thead>
         <tbody id="list-body"></tbody>
       </table>
     </div>
@@ -467,7 +467,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
     <div class="card" style="padding:0;overflow-x:auto">
       <table class="list-table">
         <!-- 실제 머리글은 loadApprovalQueue 가 다시 씁니다(11열). -->
-<thead><tr><th>번호</th><th>신청자</th><th>구분</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>Car Number</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+<thead><tr><th>번호</th><th>신청자</th><th>구분</th><th>제목</th><th>사용기간</th><th>운전자</th><th>Department</th><th>Car Model</th><th>Car Number</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
         <tbody id="appr-body"></tbody>
       </table>
     </div>
@@ -1422,9 +1422,9 @@ async function loadMyList(){
     const rrItems=rrData.value.filter(i=>(i.fields.RequesterEmail||'').toLowerCase()===myEmail).map(i=>({...i,_type:'RR'}));
     _myListRaw=[...mcItems,...rrItems].sort((a,b)=>new Date(b.fields.RequestDate||0)-new Date(a.fields.RequestDate||0));
     // 목록 헤더 업데이트 — 제목과 상태 사이에 사용기간을 둔다.
-    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:4%">구분</th><th style="width:15%">제목</th><th style="width:20%">사용기간</th><th style="width:15%">운전자</th><th style="width:8%">Department</th><th style="width:10%">Car Number</th><th style="width:6%">상태</th><th style="width:12%">신청일</th><th style="width:7%;text-align:center">Withdraw</th>';
+    document.querySelector('#tab-list table thead tr').innerHTML='<th style="width:3%">번호</th><th style="width:4%">구분</th><th style="width:14%">제목</th><th style="width:19%">사용기간</th><th style="width:14%">운전자</th><th style="width:7.5%">Department</th><th style="width:8%">Car Model</th><th style="width:9.5%">Car Number</th><th style="width:5.5%">상태</th><th style="width:9%">신청일</th><th style="width:6.5%;text-align:center">Withdraw</th>';
     renderMyList();
-  }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="10" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
+  }catch(e){document.getElementById('list-body').innerHTML=`<tr><td colspan="11" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
 
 // 조회한 내 신청 원본. 필터는 이 배열을 다시 걸러 그리기만 하므로
@@ -1458,8 +1458,8 @@ function renderMyList(){
     const _mcCell=(v)=>{const t=escAttr(v);
       return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
                : '<td><span style="color:#c8c6c4">-</span></td>';};
-    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${_mcCell(f.DriverName)}${_mcCell(f.Department)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
-  }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 10);
+    return`<tr onclick="${type==='RR'?'rrShowDetail('+item.id+')':'showDetail('+item.id+')'}" style="cursor:pointer"><td class="c-no">${idx+1}</td><td>${badge}</td><td>${summary}</td>${periodCell}${_mcCell(f.DriverName)}${_mcCell(f.Department)}${_mcCell(f.CarModel)}${_mcCell(f.CarNumber)}<td><span class="badge-${f.Status||'대기'}">${f.Status||'대기'}</span></td><td>${fmtDateCell(f.RequestDate)}</td><td style="text-align:center;vertical-align:middle;padding:4px 6px;">${_wdBtn(item.id,'MC_Approvals','MC_Requests',f.Status)}</td></tr>`;
+  }, fStatus ? '조회 결과가 없습니다.' : '신청 내역이 없습니다.', 11);
 }
 // 속성 안에 넣을 값은 따옴표까지 막아야 속성이 끊기지 않는다.
 function escAttr(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -1486,7 +1486,7 @@ async function loadApprovalQueue(){
     // 헤더 업데이트
     // 첫 열은 행 번호다. 예전에는 머리글이 「신청번호」인데 RequestID 를 그려
     // 내 신청 목록에서는 3, 결재함에서는 107 처럼 같은 건의 번호가 서로 달랐다.
-    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:2.5%">번호</th><th style="width:11%">신청자</th><th style="width:3.5%">구분</th><th style="width:13%">제목</th><th style="width:18%">사용기간</th><th style="width:14%">운전자</th><th style="width:7%">Department</th><th style="width:8.5%">Car Number</th><th style="width:5.5%">상태</th><th style="width:9%">신청일</th><th style="width:8%">처리</th>';
+    document.querySelector('#tab-appr table thead tr').innerHTML='<th style="width:2.5%">번호</th><th style="width:9%">신청자</th><th style="width:4.5%">구분</th><th style="width:12%">제목</th><th style="width:16.5%">사용기간</th><th style="width:13%">운전자</th><th style="width:7%">Department</th><th style="width:7.5%">Car Model</th><th style="width:8.5%">Car Number</th><th style="width:5%">상태</th><th style="width:8%">신청일</th><th style="width:6.5%">처리</th>';
     const rows=mine.map((item,idx)=>{
       const f=item.fields,type=item._type;
       const rf=type==='RR'?rrReqMap[String(f.RequestID)]||{}:mcReqMap[String(f.RequestID)]||{};
@@ -1498,12 +1498,12 @@ async function loadApprovalQueue(){
       const _c=(v)=>{const t=escAttr(v);
         return t ? `<td title="${t}" style="overflow:hidden;text-overflow:ellipsis">${t}</td>`
                  : '<td><span style="color:#c8c6c4">-</span></td>';};
-      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${_c(rf.DriverName)}${_c(rf.Department)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
+      return`<tr onclick="${detailFn}(${f.RequestID})" style="cursor:pointer"><td class="c-no">${idx+1}</td>${_c(rf.RequesterEmail)}<td>${badge}</td>${_c(summary)}${_c(rf.Period)}${_c(rf.DriverName)}${_c(rf.Department)}${_c(rf.CarModel)}${_c(rf.CarNumber)}<td><span class="badge-${rf.Status||'대기'}">${rf.Status||''}</span></td><td>${fmtDateCell(rf.RequestDate)}</td><td onclick="event.stopPropagation()"><button class="btn-approve" onclick="showConfirm(${item.id},'승인',${f.RequestID},'${type}')">승인</button> <button class="btn-reject" onclick="showConfirm(${item.id},'반려',${f.RequestID},'${type}')">반려</button></td></tr>`;
     });
     dynLoadEnd();
-    pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',11);
+    pgSet('appr',rows,r=>r,'결재 대기 항목이 없습니다.',12);
     const badge=document.getElementById('appr-badge');badge.textContent=mine.length;badge.style.display=mine.length?'inline':'none';
-  }catch(e){document.getElementById('appr-body').innerHTML=`<tr><td colspan="11" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
+  }catch(e){document.getElementById('appr-body').innerHTML=`<tr><td colspan="12" style="text-align:center;color:#a4262c">${e.message}</td></tr>`;dynLoadEnd();}
 }
 
 async function checkApprover(){
