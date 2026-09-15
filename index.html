@@ -806,6 +806,29 @@ async function apiAll(path) {
   return {value: items};
 }
 
+/* ── 결재행 조회(재시도 포함) ─────────────────────────────────────────
+   승인 직후 다음 결재자를 찾을 때 쓴다. 이 조회는 방금 '승인'으로 바꾼 행을
+   반드시 포함하므로, 0건이면 「마지막 결재자」가 아니라 「조회가 실패했다」는 뜻이다.
+   그래서 오류가 던져진 경우뿐 아니라 0건인 경우도 실패로 보고 재시도한다
+   (CTR_PR 의 apiAllRetry 는 던져진 오류만 재시도한다 — 이 조회의 성질에 맞게 확장).
+   400ms · 800ms 백오프로 최대 3회. 스로틀(429)이나 일시 장애는 대부분 여기서 걷힌다.
+   세 번 모두 비면 [] 를 돌려주고, 호출부가 승인완료로 넘기지 않고 중단한다. */
+async function aprRowsRetry(path, tries){
+  tries = tries || 3;
+  let last = null;
+  for(let i = 0; i < tries; i++){
+    try{
+      const r = await apiAll(path);
+      const rows = (r && r.value) || [];
+      if(rows.length) return rows;
+      last = new Error('조회 결과가 비어 있음');
+    }catch(e){ last = e; }
+    if(i < tries - 1) await new Promise(s => setTimeout(s, 400 * (i + 1)));
+  }
+  console.error('[결재] 결재행 조회 실패(재시도 ' + tries + '회):', last && last.message);
+  return [];
+}
+
 // ══ 감사 로깅 (Excel 내보내기 등) — STK-DB "Logging_data" 폴더에 시스템/날짜별로 개별 JSON 파일 기록 ══
 // fire-and-forget: 호출부를 절대 블로킹하지 않고, 실패해도 원 기능(Excel 내보내기 등)에 영향 없음
 let _logDriveId = null;
@@ -1649,8 +1672,7 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
       // 0건은 조회가 잘못된 것이라고 단정할 수 있다. GW(1687행)·ACC 와 같은 방식.
       // 한 신청의 결재행은 많아도 열 건 미만이라 전송량 차이는 없고,
       // 조건이 둘에서 하나로 줄어 색인 요구와 실패 확률도 함께 내려간다.
-      const all=await apiAll('/sites/'+siteId+'/lists/'+aprList+"/items?$expand=fields&$top=50&$filter=fields/RequestID eq "+parseInt(reqId));
-      const _rows=all.value||[];
+      const _rows=await aprRowsRetry('/sites/'+siteId+'/lists/'+aprList+"/items?$expand=fields&$top=50&$filter=fields/RequestID eq "+parseInt(reqId));
       if(!_rows.length){
         console.error('[MC] 결재 행 조회 결과가 비어 있음 — 승인완료 전환 중단. RequestID:', reqId);
         showAlert('승인은 기록되었으나 다음 단계로 넘기지 못했습니다.',
