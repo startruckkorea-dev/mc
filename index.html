@@ -8,6 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.0/lib/msal-browser.min.js">// cache-bust: 1778597968
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- 상세 PDF 출력용(09-25) — GW 와 같은 라이브러리 · 버전 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
@@ -631,7 +634,13 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
 <div id="detail-modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-title">신청 상세 내용</div>
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>신청 상세 내용</span>
+      <button id="btn-export-pdf" onclick="exportModalPdf()" title="결재내용 통합 PDF 출력" style="display:none;background:#0078d4;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:5px;transition:all .15s" onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0078d4'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        PDF 출력
+      </button>
+    </div>
     <div id="modal-content"></div>
   </div>
 </div>
@@ -1858,6 +1867,7 @@ async function showDetail(id){
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(id)),
     ]);
     const f=r.fields;
+    _pdfCtx = { prefix:'MC', label:'STK Mobility Car', id, email:f.RequesterEmail||'' }; showPdfBtn(true);
     const apprList=apprData.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:6px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
@@ -1940,7 +1950,197 @@ async function showDetail(id){
     });
   }catch(e){document.getElementById('modal-content').innerHTML='<p style="color:#a4262c">오류: '+e.message+'</p>';}
 }
-function closeModal(){ document.getElementById('detail-modal').className=''; }
+function closeModal(){ document.getElementById('detail-modal').className=''; showPdfBtn(false); }
+
+/* ── 상세 PDF 출력 (09-25) — GW(exportModalPdf) 와 같은 방식 ──
+   상세 모달 내용을 html2canvas 로 찍어 A4 로 나눠 담고, 첨부(이미지는 그대로 · PDF 는 병합 · Office 는 Graph 로 PDF 변환)를
+   뒤에 붙인다. MC · RR 이 같은 모달을 쓰므로 _pdfCtx 에 어느 쪽인지(머리글 · 파일 이름 접두어 · 신청자)를 두고 쓴다. */
+let _pdfCtx = { prefix:'MC', label:'STK Mobility Car', id:null, email:'' };
+function showPdfBtn(on){ const b=document.getElementById('btn-export-pdf'); if(b) b.style.display = on ? 'flex' : 'none'; }
+async function exportModalPdf() {
+  const btn = document.getElementById('btn-export-pdf');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ 생성 중...'; btn.disabled = true;
+  window._mergedPdfDoc = null;
+
+  try {
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+
+    // ── 1. 결재 내용 캡처 (html2canvas → 이미지) ──
+    const contentEl = document.getElementById('modal-content');
+    const _bannerNow = new Date();
+    const _ds = '출력일시: ' + _bannerNow.toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'}) + ' ' + _bannerNow.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Seoul'});
+
+    // 캡처에서 뺄 것: 승인 · 반려 단추와 의견 입력칸(결재 내용이 아니라 조작부)
+    const _hidden = [...contentEl.querySelectorAll('button, textarea, .btn-approve, .btn-reject')].map(el => [el, el.style.display]);
+    _hidden.forEach(([el]) => { el.style.display = 'none'; });
+
+    const cvs = await html2canvas(contentEl, {scale:2,useCORS:true,allowTaint:true,backgroundColor:'#fff',scrollY:0,windowWidth:700});
+    _hidden.forEach(([el, d]) => { el.style.display = d; });
+
+    // ── 2. pdf-lib 메인 문서 생성 ──
+    const mainDoc = await PDFDocument.create();
+
+    // 헤더 PNG 생성 함수
+    function makeHdrPng(left, right) {
+      const hc = document.createElement('canvas');
+      hc.width = 1190; hc.height = 28;
+      const hx = hc.getContext('2d');
+      const g = hx.createLinearGradient(0,0,hc.width,0);
+      g.addColorStop(0,'#0f2744'); g.addColorStop(1,'#0a4a8a');
+      hx.fillStyle=g; hx.fillRect(0,0,hc.width,hc.height);
+      hx.fillStyle='#3b82f6'; hx.fillRect(0,hc.height-2,hc.width,2);
+      hx.fillStyle='#fff';
+      hx.font='500 13px "Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+      hx.textBaseline='middle'; hx.fillText(left,14,13);
+      hx.textAlign='right'; hx.font='400 12px "Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+      hx.fillStyle='rgba(255,255,255,.6)'; hx.fillText(right,hc.width-14,13);
+      return hc.toDataURL('image/png');
+    }
+
+    // 이미지 데이터를 Uint8Array로 변환
+    async function dataUrlToUint8(dataUrl) {
+      const res = await fetch(dataUrl);
+      const ab = await res.arrayBuffer();
+      return new Uint8Array(ab);
+    }
+
+    // 결재 내용 이미지를 A4 페이지들로 분할 추가
+    // pdf-lib은 이미지 크롭 불가 → canvas로 직접 슬라이싱
+    const A4W = 595, A4H = 842;
+    const marginPt = 34, hdrH = 22;
+    const printW_pt = A4W - marginPt*2;
+    const printableH_pt = A4H - marginPt*2 - hdrH;
+
+    // canvas 픽셀 기준: 1pt = cvs.width / A4W 픽셀
+    const pxPerPt = cvs.width / A4W;
+    const sliceH_px = Math.round(printableH_pt * pxPerPt); // 한 페이지에 들어갈 픽셀 높이
+    const numPages = Math.ceil(cvs.height / sliceH_px);
+
+    const hdrDataUrl = makeHdrPng((_pdfCtx.label || 'STK Mobility Car') + ' · 결재 내역 증빙 자료', _ds);
+    const hdrBytes = await dataUrlToUint8(hdrDataUrl);
+
+    for(let i = 0; i < numPages; i++) {
+      const page = mainDoc.addPage([A4W, A4H]);
+      const hdrImg = await mainDoc.embedPng(hdrBytes);
+      page.drawImage(hdrImg, {x:0, y:A4H-hdrH, width:A4W, height:hdrH});
+
+      // 해당 페이지 영역만 canvas에서 잘라내기
+      const srcY = i * sliceH_px;
+      const sliceActual_px = Math.min(sliceH_px, cvs.height - srcY);
+      const sliceActual_pt = sliceActual_px / pxPerPt;
+
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = cvs.width;
+      sliceCanvas.height = sliceActual_px;
+      sliceCanvas.getContext('2d').drawImage(cvs, 0, srcY, cvs.width, sliceActual_px, 0, 0, cvs.width, sliceActual_px);
+
+      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.92);
+      const sliceBytes = await dataUrlToUint8(sliceData);
+      const sliceImg = await mainDoc.embedJpg(sliceBytes);
+
+      page.drawImage(sliceImg, {
+        x: marginPt,
+        y: A4H - hdrH - marginPt - sliceActual_pt,
+        width: printW_pt,
+        height: sliceActual_pt
+      });
+    }
+
+    // ── 3. 첨부파일 처리 ──
+    const fileLinks = contentEl.querySelectorAll('.file-dl-link');
+    const _t = await token();
+
+    for(const link of fileLinks) {
+      const name = decodeURIComponent(link.dataset.name || '');
+      if(!name) continue;
+      const dId = decodeURIComponent(link.dataset.drive || '');
+      const iId = decodeURIComponent(link.dataset.id || '');
+      if(!dId || !iId) continue;
+      const ext = name.split('.').pop().toLowerCase();
+      const imgExts = ['jpg','jpeg','png','gif','webp'];
+
+      btn.innerHTML = '⏳ ' + name.substring(0,20) + '...';
+
+      try {
+        let pdfBytes = null;
+
+        if(imgExts.includes(ext)) {
+          // 이미지: 직접 fetch → 새 페이지에 삽입
+          const res = await fetch('https://graph.microsoft.com/v1.0/drives/'+dId+'/items/'+iId+'/content', {headers:{Authorization:'Bearer '+_t}});
+          if(!res.ok) throw new Error(res.status);
+          const imgAb = await res.arrayBuffer();
+          const attachPage = mainDoc.addPage([A4W, A4H]);
+          const aHdr = await mainDoc.embedPng(hdrBytes);
+          const aHdrFn = makeHdrPng('첨부파일: '+name, _ds);
+          const aHdrBytes = await dataUrlToUint8(aHdrFn);
+          const aHdrImg = await mainDoc.embedPng(aHdrBytes);
+          attachPage.drawImage(aHdrImg, {x:0, y:A4H-hdrH, width:A4W, height:hdrH});
+          let embImg;
+          if(['jpg','jpeg'].includes(ext)) embImg = await mainDoc.embedJpg(new Uint8Array(imgAb));
+          else embImg = await mainDoc.embedPng(new Uint8Array(imgAb));
+          const {width:iW, height:iH} = embImg;
+          const ratio = Math.min(printW_pt/iW, (A4H-hdrH-marginPt*2)/iH);
+          attachPage.drawImage(embImg, {
+            x: marginPt,
+            y: A4H - hdrH - marginPt - iH*ratio,
+            width: iW*ratio, height: iH*ratio
+          });
+
+        } else {
+          // Office/PDF: Graph API PDF 변환 (PDF는 그대로, Office는 변환)
+          const convertUrl = ext === 'pdf'
+            ? 'https://graph.microsoft.com/v1.0/drives/'+dId+'/items/'+iId+'/content'
+            : 'https://graph.microsoft.com/v1.0/drives/'+dId+'/items/'+iId+'/content?format=pdf';
+          const res = await fetch(convertUrl, {headers:{Authorization:'Bearer '+_t}});
+          if(!res.ok) throw new Error('변환실패 '+res.status);
+          pdfBytes = new Uint8Array(await res.arrayBuffer());
+
+          // 변환된 PDF를 mainDoc에 병합
+          const srcDoc = await PDFDocument.load(pdfBytes, {ignoreEncryption:true});
+          const copiedPages = await mainDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+
+          const aHdrFn2 = makeHdrPng('첨부파일: '+name, _ds);
+          const aHdrBytes2 = await dataUrlToUint8(aHdrFn2);
+
+          for(const pg of copiedPages) {
+            mainDoc.addPage(pg);
+            // 헤더 오버레이
+            const aHdrImg2 = await mainDoc.embedPng(aHdrBytes2);
+            const {width:pgW, height:pgH} = pg.getSize();
+            pg.drawImage(aHdrImg2, {x:0, y:pgH-hdrH, width:pgW, height:hdrH});
+          }
+        }
+      } catch(e) {
+        console.warn('첨부파일 처리 실패:', name, e.message);
+        // 실패 시 오류 페이지 추가
+        const errPage = mainDoc.addPage([A4W, A4H]);
+        const aHdrFn3 = makeHdrPng('첨부파일: '+name+' (변환 실패)', _ds);
+        const aHdrBytes3 = await dataUrlToUint8(aHdrFn3);
+        const aHdrImg3 = await mainDoc.embedPng(aHdrBytes3);
+        errPage.drawImage(aHdrImg3, {x:0, y:A4H-hdrH, width:A4W, height:hdrH});
+      }
+    }
+
+    // ── 4. 최종 저장 ──
+    const finalBytes = await mainDoc.save();
+    const finalBlob = new Blob([finalBytes], {type:'application/pdf'});
+    const reqEmail = (_pdfCtx.email||'unknown').replace(/[^a-z0-9]/gi,'_');
+    const saveFileName = (_pdfCtx.prefix||'MC')+'_'+(_pdfCtx.id||'req')+'_'+reqEmail+'_'+new Date(new Date().getTime()+9*3600*1000).toISOString().substring(0,10)+'.pdf';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(finalBlob);
+    a.download = saveFileName;
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+
+  } catch(e) {
+    alert('PDF 생성 오류: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
+}
 
 // ── Dynamic Loading ──
 let _dynLoadTimer=null,_dynMsgTimer=null;
@@ -2078,6 +2278,7 @@ async function rrShowDetail(id){
       apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(id)),
     ]);
     const f=r.fields;
+    _pdfCtx = { prefix:'RR', label:'STK Repair Report', id, email:f.RequesterEmail||'' }; showPdfBtn(true);
     const apprList=apprData.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:14px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:5px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
