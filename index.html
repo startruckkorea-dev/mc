@@ -1374,10 +1374,12 @@ function switchTab(t){
       e === (_user.username||'').toLowerCase() || e === (_user.email||'').toLowerCase()
     );
     if (!_isAdmin) {
+      logAction(((document.getElementById('admin-type')||{}).value==='RR'?'Repair Report':'Mobility Car'), '관리자 탭 접근 차단', { reason: '관리자 명단에 없음', admins: _emails.length });   // 권한이 없어 막혀도 이력은 남긴다(09-30 · SSC 입장 차단과 같은 취지)
       const m = document.getElementById('no-auth-modal');
       if (m) m.style.display = 'flex';
       return;
     }
+    logAction(((document.getElementById('admin-type')||{}).value==='RR'?'Repair Report':'Mobility Car'), '관리자 탭 열기', {});
   }
 
     // 폭 조정 — 권한 검사를 통과한 뒤에 한다.
