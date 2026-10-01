@@ -593,9 +593,9 @@ body{font-family:'Segoe UI',sans-serif;background:#f3f2f1;min-height:100vh}
         <div class="appr-line-title">📋 결재 라인 (Repair Report 기준 자동 구성)</div>
         <div class="appr-line-steps"><span class="line-step"><span class="line-step-badge">1차</span><span class="line-step-label">Line Manager (팀장)</span><span class="line-arrow">→</span></span><span class="line-step"><span class="line-step-badge fixed">2차</span><span class="line-step-label">CFO</span><span class="line-arrow">→</span></span><span class="line-step"><span class="line-step-badge fixed">3차</span><span class="line-step-label">GA Specialist</span></span></div>
       </div>
-      <div class="appr-block">
-        <div class="appr-block-title">1차 결재자 <span class="req-mark">*</span><span class="appr-tag manual">직접 선택</span> <span class="hint">— Line Manager (팀장)</span></div>
-        <div class="appr-select-row">
+      <div class="appr-block appr-fixed appr-flex">
+        <div class="appr-block-title">1차 결재자 <span class="req-mark">*</span><span class="appr-tag flex">Flex 연동</span> <span class="hint">— Line Manager (팀장)</span></div>
+        <div class="appr-select-row" style="display:none">
           <select id="rr-a1-dept" onchange="onDeptChange('rr-a1')"><option value="">부서</option></select>
           <select id="rr-a1-team" onchange="onTeamChange('rr-a1')" disabled><option value="">팀</option></select>
           <select id="rr-a1-person" onchange="onPersonChange('rr-a1')" disabled><option value="">직원 선택</option></select>
@@ -1213,9 +1213,10 @@ async function loadEmployees(){
     const buf=await res.arrayBuffer();
     const wb=XLSX.read(buf,{type:'array'});
     const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    employeeData=rows.map(r=>({dept:r['Department']||'',team:r['Team']||'',name:r['EngName']||'',email:(r['EMail']||r['email']||'')})).filter(r=>r.email&&r.name);
+    employeeData=rows.map(r=>({dept:r['Department']||'',team:r['Team']||'',name:r['EngName']||'',email:(r['EMail']||r['email']||''),boss:String(r['Boss']||'').trim(),boss2:String(r['Boss of Boss']||'').trim()})).filter(r=>r.email&&r.name);   // boss = G열 팀장 · boss2 = H열 부서장 (Flex 연동 결재자, 10-01)
     populateDepts(1);
     rrPopulateDepts();
+    applyFlexApprovers();   // Repair Report 1차(Line Manager) — Flex 연동(10-01)
     // 신청서 Department 드롭다운 채우기 (employee_search.xlsx 기준)
     const depts = [...new Set(employeeData.map(e=>e.dept))].filter(Boolean).sort();
     const fDept = document.getElementById('f-dept');
@@ -1244,7 +1245,7 @@ async function loadEmployees(){
         document.getElementById('f-driver-dept').value=_myEmp.dept;
       }
     }
-  }catch(e){ console.warn('직원 데이터 로드 실패:',e); }
+  }catch(e){ console.warn('직원 데이터 로드 실패:',e); applyFlexApprovers(); }   // 못 읽었으면 직접 선택 칸을 연다
 }
 
 function populateDepts(idx){
@@ -2353,6 +2354,64 @@ function rrPopulateDepts(){
   });
 }
 
+
+/* ══ Flex 연동 결재자 (10-01) ══
+   직접 선택하던 팀장(Line Manager · Team Leader) · 부서장(Department Head · MC) 결재자를 employee_search.xlsx(Flex 조직도)에서 자동으로 정한다.
+   G열 Boss = 팀장, H열 Boss of Boss = 부서장. 설정 파일(system_config)로 정하는 자동 지정 결재자(CFO · 회계담당자 · RD 등)는 그대로.
+   · 신청자(로그인 계정)를 EMail 열에서 찾고, Boss / Boss of Boss 에 적힌 이름(EngName)을 명부에서 다시 찾아 이메일을 얻는다.
+   · 부서장(H)이 '-' 이면(본부장 본인 신청) G(직속 상사 = 대표)를 부서장으로 본다. 같은 사람이 두 단계에 올 수 있다(09-19 규칙과 같음).
+   · 신청자가 명부에 없거나(서비스 계정 · 신규 입사) 상사 이름을 못 찾으면 예전처럼 직접 선택 칸을 열어 두고 안내를 띄운다 — 업무를 막지 않고
+     Logging_data 에 「결재자 Flex 연동 실패」 로 남겨 IT 가 명부를 고치게 한다.
+   입력칸(…-name · …-email)과 상신 로직은 그대로 — 값을 자동으로 채우고 칸을 읽기 전용(회색)으로 둘 뿐이다. */
+const FLEX_SLOTS = [{id: "rr-a1", role: "tl"}];   // id = 이름/이메일 칸 접두어(id-name · id-email), role: tl(팀장 = G열) · dh(부서장 = H열)
+const FLEX_SYS = "Repair Report";
+function flexNorm(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function flexEmp(){ return (employeeData) || []; }
+function flexByName(name){ const k=flexNorm(name); if(!k||k==='-') return null; return flexEmp().find(e=>flexNorm(e.name)===k)||null; }
+function flexResolve(){
+  const u = user; const me=[u&&u.email, u&&u.username].map(flexNorm).filter(Boolean);
+  const rec=flexEmp().find(e=>me.includes(flexNorm(e.email)))||null;
+  if(!rec) return {rec:null, tl:null, dh:null};
+  const tl=flexByName(rec.boss);
+  const dh=flexByName(rec.boss2)||flexByName(rec.boss);   // 부서장이 없으면(본부장 본인) 직속 상사(대표)
+  return {rec, tl, dh};
+}
+function applyFlexApprovers(){
+  const u = user; if(!u) return;
+  const nodata = !flexEmp().length;   // 명부를 못 읽었으면(네트워크 등) 직접 선택을 열어 둔다 — 예전과 같은 상태
+  const r = nodata ? {rec:null, tl:null, dh:null} : flexResolve(); const why=[];
+  FLEX_SLOTS.forEach(s=>{
+    const nameEl=document.getElementById(s.id+'-name'), emailEl=document.getElementById(s.id+'-email'); if(!nameEl||!emailEl) return;
+    const block=nameEl.closest('.appr-block'); if(!block) return;
+    const p=r[s.role];
+    const title=block.querySelector('.appr-block-title'), tag=title&&title.querySelector('.appr-tag'), row=block.querySelector('.appr-select-row');
+    let note=block.querySelector('.flex-note');
+    if(p){
+      nameEl.value=p.name; emailEl.value=p.email; nameEl.readOnly=true; emailEl.readOnly=true;
+      if(row) row.style.display='none';
+      block.classList.add('appr-fixed','appr-flex');
+      if(tag){ tag.className='appr-tag flex'; tag.textContent='Flex 연동'; }
+      if(note) note.remove();
+    }else{
+      if(row) row.style.display='';
+      block.classList.remove('appr-fixed','appr-flex');
+      if(tag){ tag.className='appr-tag manual'; tag.textContent='직접 선택'; }
+      if(!note){ note=document.createElement('div'); note.className='flex-note'; title ? title.insertAdjacentElement('afterend', note) : block.insertBefore(note, block.firstChild); }
+      const what = s.role==='tl' ? '팀장(Boss)' : '부서장(Boss of Boss)';
+      note.textContent = nodata
+        ? '⚠ 직원 명부(employee_search)를 읽지 못해 결재자를 직접 선택합니다 — 새로고침 후에도 같으면 IT팀(stk_it@hyosung.com)에 알려주세요.'
+        : r.rec
+        ? '⚠ Flex 명부(employee_search)에서 '+what+' 「'+((s.role==='tl'?r.rec.boss:(r.rec.boss2||r.rec.boss))||'(빈칸)')+'」 을(를) 찾지 못해 직접 선택합니다 — IT팀(stk_it@hyosung.com)에 알려주세요.'
+        : '⚠ 신청자 계정이 Flex 명부(employee_search)에 없어 결재자를 직접 선택합니다 — IT팀(stk_it@hyosung.com)에 알려주세요.';
+      why.push(s.id+': '+(r.rec ? (s.role==='tl' ? 'Boss 못 찾음('+(r.rec.boss||'')+')' : 'Boss of Boss 못 찾음('+(r.rec.boss2||'')+'/'+(r.rec.boss||'')+')') : '명부에 없음'));
+    }
+  });
+  if(why.length && !nodata && !applyFlexApprovers._logged){
+    applyFlexApprovers._logged=true;
+    try{ if(typeof logAction==='function') logAction(FLEX_SYS, '결재자 Flex 연동 실패', { user:(u.email||u.username||''), reason: why.join(' · ') }); }catch(e){}
+  }
+}
+
 async function rrSubmitForm(){
   const vehicleModel=document.getElementById('rr-vehicle-model').value.trim();
   const plateNumber=document.getElementById('rr-plate-number').value.trim();
@@ -2489,6 +2548,7 @@ function rrResetForm(){
   document.getElementById('rr-a1-person').disabled=true;
   document.getElementById('rr-a1-name').value='';
   document.getElementById('rr-a1-email').value='';
+  applyFlexApprovers();   // Flex 연동 결재자는 비운 뒤 다시 채운다(10-01)
 }
 
 
@@ -2628,6 +2688,8 @@ function _wdBtn(itemId, aprList, reqList, status) {
 .appr-info input[readonly]{background:#f3f2f1;color:#605e5c}
 .appr-block .appr-title::before,.appr-title::before{content:none!important;display:none!important}
 @media (max-width:640px){.appr-select-row{grid-template-columns:1fr}.appr-info{grid-template-columns:1fr}}
+.appr-tag.flex{color:#0b5fa5;background:#e1f0ff}
+.flex-note{font-size:11px;color:#a4262c;background:#fdf0f1;border:1px solid #f1c0c4;border-radius:6px;padding:6px 10px;margin:0 0 8px;line-height:1.5}
 </style>
 </body>
 </html>
