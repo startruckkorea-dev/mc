@@ -2006,11 +2006,14 @@ function apsPdfVisualFrame(pg) {
   // 보이는 영역 = CropBox ∩ MediaBox(뷰어와 같은 규칙 · 모서리 순서가 뒤집힌 상자도 바로잡음). /Rotate 가 90 의 배수가 아니면 뷰어처럼 0 으로 본다.
   const { pushGraphicsState, popGraphicsState, concatTransformationMatrix, PDFName, PDFRef, PDFArray } = PDFLib;
   const nb = q => ({ x0: Math.min(q.x, q.x + q.width), y0: Math.min(q.y, q.y + q.height), x1: Math.max(q.x, q.x + q.width), y1: Math.max(q.y, q.y + q.height) });
-  const c = nb(pg.getCropBox()), md = nb(pg.getMediaBox());
+  // 상자 · 회전 값이 망가진 PDF(값 개수가 틀림 · 숫자가 아님)는 pdf-lib 가 읽다가 던진다 — 그 쪽도 붙이고 띠는 MediaBox · 회전 0 기준으로
+  const box = f => { try { return nb(f()); } catch (e) { return null; } };
+  const md = box(() => pg.getMediaBox()) || { x0: 0, y0: 0, x1: 612, y1: 792 }, c = box(() => pg.getCropBox()) || md;
   const x0 = Math.max(c.x0, md.x0), y0 = Math.max(c.y0, md.y0), x1 = Math.min(c.x1, md.x1), y1 = Math.min(c.y1, md.y1);
   const v = x1 > x0 && y1 > y0 ? { x0, y0, x1, y1 } : md;
   const b = { x: v.x0, y: v.y0, width: v.x1 - v.x0, height: v.y1 - v.y0 };
-  let r = Number(pg.getRotation().angle) || 0; r = ((r % 360) + 360) % 360; if (r % 90) r = 0;
+  let r = 0; try { r = Number(pg.getRotation().angle) || 0; } catch (e) {}
+  r = ((r % 360) + 360) % 360; if (r % 90) r = 0;
   const m = r === 90  ? [0, 1, -1, 0, b.x + b.width, b.y]
           : r === 180 ? [-1, 0, 0, -1, b.x + b.width, b.y + b.height]
           : r === 270 ? [0, -1, 1, 0, b.x, b.y + b.height]
@@ -2045,7 +2048,7 @@ async function apsNoticeCardBytes(kind, name, info) {
       accent: '#b45309', bg: '#fffbeb', border: '#fcd34d', icon: 'lock' },
     nolink:    { title: 'Attachment link is missing', sub: 'The file could not be located',
       lines: ['Only the file name is stored on the request — the storage key is missing.',
-              'Reopen the request to let it recover the link, or contact IT.'],
+              'Open the request to check the attachment, or contact IT.'],
       accent: '#b91c1c', bg: '#fef2f2', border: '#fca5a5', icon: 'link' },
     failed:    { title: 'Attachment could not be converted', sub: 'Download or PDF conversion failed',
       lines: ['An error occurred while downloading the file or converting it to PDF (password-protected Office files cannot be converted).',
@@ -2053,17 +2056,19 @@ async function apsNoticeCardBytes(kind, name, info) {
       accent: '#b91c1c', bg: '#fef2f2', border: '#fca5a5', icon: 'warn' },
   }[kind] || { title: 'Attachment', sub: '', lines: [], accent: '#605e5c', bg: '#f3f2f1', border: '#d2d0ce', icon: 'warn' };
   // 폭에 맞춰 줄바꿈 — 영문은 단어 단위로, 공백 없는 긴 파일명은 글자 단위로 자른다
-  const wrap = (txt, maxW, font) => { x.font = font; const out = []; let cur = '';
+  const wrap = (txt, maxW, font, max = 4) => { x.font = font; const out = []; let cur = '';
     const push = (piece) => { if (x.measureText(cur ? cur + ' ' + piece : piece).width <= maxW) { cur = cur ? cur + ' ' + piece : piece; return; }
       if (cur) { out.push(cur); cur = ''; }
       if (x.measureText(piece).width <= maxW) { cur = piece; return; }
       for (const ch of piece) { if (x.measureText(cur + ch).width > maxW && cur) { out.push(cur); cur = ch; } else cur += ch; } };
     String(txt).split(' ').forEach(push);
-    if (cur) out.push(cur); return out.slice(0, 4); };
+    if (cur) out.push(cur);
+    if (out.length > max) { let l = out[max - 1]; while (l && x.measureText(l + '…').width > maxW) l = l.slice(0, -1); out.length = max; out[max - 1] = l + '…'; }   // 넘치면 말줄임
+    return out; };
   const nameLines = wrap(name, cw - 84, '600 12.5px ' + F);
-  const infoLines = (info ? [info] : []);
+  const infoLines = info ? wrap(info, cw - 60, '400 10.5px ' + F, 2) : [];   // 긴 오류 문구는 두 줄까지 · 카드 밖으로 나가지 않게
   const bodyLines = [].concat(...T.lines.map(l => wrap(l, cw - 60, '400 11.5px ' + F)));
-  const H = 176 + nameLines.length * 17 + (bodyLines.length * 18) + (infoLines.length ? 22 : 0);
+  const H = 176 + nameLines.length * 17 + (bodyLines.length * 18) + (infoLines.length ? 8 + infoLines.length * 14 : 0);
   c.height = H * S; x.setTransform(S, 0, 0, S, 0, 0);
   const rr = (px, py, pw, ph, r) => { x.beginPath(); x.moveTo(px + r, py); x.arcTo(px + pw, py, px + pw, py + ph, r); x.arcTo(px + pw, py + ph, px, py + ph, r); x.arcTo(px, py + ph, px, py, r); x.arcTo(px, py, px + pw, py, r); x.closePath(); };
   rr(0.5, 0.5, cw - 1, H - 1, 14); x.fillStyle = '#fff'; x.fill(); x.strokeStyle = '#d6dde8'; x.lineWidth = 1; x.stroke();
@@ -2087,7 +2092,7 @@ async function apsNoticeCardBytes(kind, name, info) {
   x.fillStyle = '#374151'; x.font = '400 11.5px ' + F;
   bodyLines.forEach((l, i) => x.fillText(l, cx, y + 8 + i * 18));
   y += bodyLines.length * 18 + 6;
-  if (infoLines.length) { x.fillStyle = '#8a94a6'; x.font = '400 10.5px ' + F; x.fillText(infoLines[0], cx, y + 8); }
+  if (infoLines.length) { x.fillStyle = '#8a94a6'; x.font = '400 10.5px ' + F; infoLines.forEach((l, i) => x.fillText(l, cx, y + 8 + i * 14)); }
   return apsU8FromDataUrl(c.toDataURL('image/png'));
 }
 function apsAttachOpt(o) {
