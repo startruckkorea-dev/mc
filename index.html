@@ -294,6 +294,113 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: #94A3B8; background-clip: padding-box; }
 </style>
+<style id="aps-mobile">
+/* APS 모바일(10-09 · aps-mobile) — 767px 이하 전용. 웹 화면 무변경 */
+/* Mobility Car + Repair Report: 내 신청 목록 · 결재함 표는 고정 레이아웃 % 폭이라 폰 폭(358px)에 11~12열이 끼어 칸마다 말줄임 · 머리글 겹침 →
+   표에 최소 폭을 주어 웹과 같은 비율로 펼치고 표 상자(카드)만 가로 스크롤. 본문 끝 공통 style 블록 보다 앞이라 #app · 모달 id 로 올려 쓴다. */
+@media (max-width: 767px) {
+  /* ── 바탕 · 바깥 여백 ── */
+  #app { padding: 12px 12px 28px; }
+  #app .card { padding: 16px 14px; margin-bottom: 12px; }
+  #app .card-title { margin-bottom: 14px; }
+  #app .section-title { margin: 16px 0 10px; }
+
+  /* ── 헤더(V3) — 띠 한 줄 · 제목 한 단계 작게 · BU Admin 줄바꿈 허용 ── */
+  #app .aps-hdr { padding: 0 16px 14px; margin-bottom: 12px; }
+  #app .aps-band { flex-basis: calc(100% + 32px); margin-left: -16px; margin-right: -16px; padding: 0 16px; }
+  #app .aps-band-crumb { overflow: hidden; text-overflow: ellipsis; }
+  #app .header .title { font-size: 1rem; line-height: 1.35; }
+  #app .header .sub, #app .aps-sub { font-size: 11.5px; }
+  #app .aps-hdr .hdr-contact { display: grid; grid-template-columns: max-content minmax(0, 1fr); max-width: 100%; font-size: 11px; }
+  #app .aps-hdr .hdr-contact-mail { min-width: 0; overflow-wrap: anywhere; }
+
+  /* ── 탭 — 한 줄 가로 스크롤 · 터치 높이 42px ── */
+  #app .tabs { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-bottom: 12px; }
+  #app .tabs::-webkit-scrollbar { display: none; }
+  #app .tabs .tab-btn { flex: 0 0 auto; white-space: nowrap; min-height: 42px; padding: 10px 15px; display: inline-flex; align-items: center; }
+
+  /* ── 폼 — 1열 · 입력 폭 100% · 글자 16px(iOS 확대 방지) ── */
+  #app .form-row { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+  #app .form-group { min-width: 0; }
+  #app .form-group select, #app .form-group input, #app .form-group textarea { width: 100%; min-width: 0; max-width: 100%; padding: 8px 10px; }
+  #app input:not([type=checkbox]):not([type=radio]):not([type=file]), #app select, #app textarea,
+  #confirm-comment { font-size: 16px !important; }
+  #app input[type=checkbox] { width: 18px; height: 18px; }
+
+  /* 사용 기간 줄 — 「Pickup Date」 / 날짜 · 시 · AM/PM / 「Return Date」 / 날짜 · 시 · AM/PM / 기간 알약 */
+  #app div:has(> #f-pickup-date) { display: grid !important; grid-template-columns: minmax(0, 1fr) 68px 76px; gap: 8px !important; align-items: center; margin-bottom: 8px !important; }
+  #app div:has(> #f-pickup-date) > span:nth-child(1), #app div:has(> #f-pickup-date) > span:nth-child(6) { grid-column: 1 / -1; margin-top: 2px; }
+  #app div:has(> #f-pickup-date) > span:nth-child(5) { display: none; }  /* 「~」 장식 — 위아래 배치에서는 라벨이 구분한다 */
+  #app div:has(> #f-pickup-date) > input, #app div:has(> #f-pickup-date) > select { width: 100%; min-width: 0; min-height: 40px; padding: 6px 8px !important; }
+  #app #period-span { grid-column: 1 / -1; justify-self: start; margin-top: 2px; }
+  #app #period-span:empty { display: none; }
+  /* Repair Report 사고 일시 줄 */
+  #app div:has(> #rr-accident-date) > input { flex: 1 1 100% !important; min-height: 40px; }
+  #app div:has(> #rr-accident-date) > select { flex: 1 1 0; min-height: 40px; }
+  /* 운전자 선택(체크 두 개) 줄바꿈 허용 */
+  #app div:has(> label > #same-as-requester) { flex-wrap: wrap; gap: 10px 18px !important; }
+  #app div:has(> label > #same-as-requester) > label { min-height: 32px; }
+
+  /* 결재선 — 세로 한 줄씩 */
+  #app .appr-line-preview { padding: 10px 12px; }
+  #app .appr-block { padding: 12px; }
+  #app .appr-select-row, #app .appr-info, #app .appr-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  #app .appr-select-row select, #app .appr-info input, #app .appr-grid select { min-width: 0; padding: 8px 10px; }
+
+  /* 첨부 줄 */
+  #app .file-row input[type="file"] { min-width: 0; padding: 6px 8px; }
+  #app .btn-file-reset { min-height: 36px; padding: 4px 12px; flex: none; }
+
+  /* 단추 줄 — 2열 꽉 채움 */
+  #app .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #app .btn-row > button { width: 100%; min-height: 44px; padding: 10px 12px; }
+
+  /* ── 목록 · 결재함 · 관리자 — 표에 최소 폭(웹과 같은 비율), 카드(표 상자)만 가로 스크롤 ── */
+  #app #tab-list .card, #app #tab-appr .card, #app #tab-admin .card { padding: 0 !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #app #tab-list .list-table, #app #tab-appr .list-table { min-width: 1408px; }  /* = 웹(1440px 화면)에서 표가 받는 폭 — 열 비율 · 말줄임이 웹과 같다 */
+  /* 필터 줄 */
+  #app #tab-list > div:first-child, #app #tab-admin > div:first-child { gap: 8px !important; }
+  #app #list-status { flex: 1 1 auto; min-height: 40px; }
+  #app #admin-type { flex: 1 1 100%; min-height: 40px; }
+  #app #admin-status, #app #admin-dept { flex: 1 1 40%; min-width: 0; min-height: 40px; }
+  #app #tab-admin > div:first-child > div:last-child { flex: 1 1 100%; justify-content: space-between; margin-left: 0 !important; }
+  #app #tab-admin > div:first-child > div:last-child > button { min-height: 36px; }
+
+  /* ── 상세 모달 ── 699px 이하에서만: PDF 출력(html2canvas · windowWidth 700)이 같은 화면을 700px 폭으로 다시 그리므로
+     그 폭에서는 이 규칙이 걸리지 않아야 출력물이 웹과 똑같다. 휴대폰은 모두 700px 미만이다. */
+  @media (max-width: 699.98px) {
+    #detail-modal .modal-box { width: calc(100% - 20px); max-width: none; max-height: 90vh; max-height: 90dvh; padding: 18px 16px 20px; -webkit-overflow-scrolling: touch; }
+    #detail-modal .modal-title { padding-right: 34px; gap: 8px; }
+    #detail-modal .modal-close { top: 10px; right: 10px; width: 36px; height: 36px; }
+    #detail-modal .modal-row { gap: 10px; }
+    #detail-modal .modal-label { width: 100px; }
+    #detail-modal .modal-value { min-width: 0; overflow-wrap: anywhere; }
+    #detail-modal .modal-action .btn-approve, #detail-modal .modal-action .btn-reject { min-height: 46px; }
+  }
+
+  /* ── 확인 · 안내 팝업 ── */
+  #confirm-modal .confirm-box { width: calc(100% - 20px); padding: 22px 18px 18px; }
+  #confirm-modal .confirm-box > div:last-child { display: grid !important; grid-template-columns: 1fr 1fr; }
+  #confirm-modal .confirm-box > div:last-child > button { min-height: 44px; }
+  #mc-alert-modal .mc-alert-box { width: calc(100% - 40px); padding: 24px 20px; }
+  #mc-alert-modal .mc-alert-btn { width: 100%; min-height: 44px; }
+  #no-auth-modal > div { width: calc(100% - 20px) !important; padding: 28px 20px 22px !important; }
+  #no-auth-modal > div > button { width: 100%; min-height: 44px; }
+  #unified-modal { padding-top: 20px; }
+  #unified-modal .unified-box { width: calc(100% - 20px); }
+
+  /* ── 로딩 ── */
+  #dyn-loading .dyn-box, #loading .loading-box { max-width: calc(100% - 40px); padding: 24px 28px; }
+
+  /* ── 로그인 ── */
+  #login-screen { padding: 24px 16px 96px; }
+  #login-screen .login-card { padding: 40px 24px 28px; border-radius: 18px; }
+  #login-screen .login-page-footer { flex-direction: column; gap: 2px; padding: 8px 16px; text-align: center; font-size: 10.5px; line-height: 1.4; }
+
+  footer { padding: 16px 14px !important; margin-top: 24px !important; }
+  footer > div > div { text-align: left !important; }
+}
+</style>
 </head>
 <body>
 
