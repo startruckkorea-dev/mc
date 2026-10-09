@@ -298,7 +298,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 /* APS 모바일(10-09 · aps-mobile) — 767px 이하 전용. 웹 화면 무변경 */
 /* Mobility Car + Repair Report: 내 신청 목록 · 결재함 표는 고정 레이아웃 % 폭이라 폰 폭(358px)에 11~12열이 끼어 칸마다 말줄임 · 머리글 겹침 →
    표에 최소 폭을 주어 웹과 같은 비율로 펼치고 표 상자(카드)만 가로 스크롤. 본문 끝 공통 style 블록 보다 앞이라 #app · 모달 id 로 올려 쓴다. */
-@media (max-width: 767px) {
+@media screen and (max-width: 767px) {
   /* ── 바탕 · 바깥 여백 ── */
   #app { padding: 12px 12px 28px; }
   #app .card { padding: 16px 14px; margin-bottom: 12px; }
@@ -326,6 +326,19 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
   #app input:not([type=checkbox]):not([type=radio]):not([type=file]), #app select, #app textarea,
   #confirm-comment { font-size: 16px !important; }
   #app input[type=checkbox] { width: 18px; height: 18px; }
+  /* 입력 · 선택 칸 높이 40px 로 통일 */
+  #app .form-group input:not([type=checkbox]):not([type=radio]):not([type=file]), #app .form-group select,
+  #app .appr-select-row select, #app .appr-info input, #app .appr-grid select { min-height: 40px; }
+
+  /* ── iPhone(Safari) · Galaxy 대비 — 글자 자동 확대 · 날짜 칸 폭/높이 차이 막기 ── */
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  input, select, textarea, button { max-width: 100%; box-sizing: border-box; }
+  input[type=date], input[type=time], input[type=month], input[type=datetime-local] { min-width: 0; }
+  @supports (-webkit-touch-callout: none) {
+    /* 사용 기간(격자) · 사고 일시(flex) 줄의 날짜 칸 — 격자/flex 칸이라 display 는 그대로 둔다 */
+    #app input[type=date] { -webkit-appearance: none; appearance: none; min-height: 40px; line-height: normal; text-align: left; }
+    input::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
+  }
 
   /* 사용 기간 줄 — 「Pickup Date」 / 날짜 · 시 · AM/PM / 「Return Date」 / 날짜 · 시 · AM/PM / 기간 알약 */
   #app div:has(> #f-pickup-date) { display: grid !important; grid-template-columns: minmax(0, 1fr) 68px 76px; gap: 8px !important; align-items: center; margin-bottom: 8px !important; }
@@ -358,6 +371,9 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
   /* ── 목록 · 결재함 · 관리자 — 표에 최소 폭(웹과 같은 비율), 카드(표 상자)만 가로 스크롤 ── */
   #app #tab-list .card, #app #tab-appr .card, #app #tab-admin .card { padding: 0 !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   #app #tab-list .list-table, #app #tab-appr .list-table { min-width: 1408px; }  /* = 웹(1440px 화면)에서 표가 받는 폭 — 열 비율 · 말줄임이 웹과 같다 */
+  /* 관리자 표도 같은 폭(2차 10-10): 전역 최소 폭 960px 로는 Repair Report 고정 폭 열 합(1041px)을 못 담아 Description 열이 0px 이 되어
+     머리글 「Description」 이 「Accident Type」 위에 겹치고, Mobility Car 표도 700px 이상에서 머리글끼리 겹쳤다. */
+  #app #tab-admin .list-table { min-width: 1408px; }
   /* 필터 줄 */
   #app #tab-list > div:first-child, #app #tab-admin > div:first-child { gap: 8px !important; }
   #app #list-status { flex: 1 1 auto; min-height: 40px; }
