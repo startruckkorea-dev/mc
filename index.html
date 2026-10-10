@@ -2213,7 +2213,7 @@ async function showDetail(id){
       apiAll('/sites/'+siteId+'/lists/'+LIST_APR+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(id)),
     ]);
     const f=r.fields;
-    _pdfCtx = { prefix:'MC', label:'STK Mobility Car', id, email:f.RequesterEmail||'' }; showPdfBtn(true);
+    _pdfCtx = { prefix:'MC', label:'STK Mobility Car', id, email:f.RequesterEmail||'', title:f.Title||'', status:f.Status||'' }; showPdfBtn(true);
     const apprList=apprData.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:6px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
@@ -2589,8 +2589,12 @@ async function exportModalPdf() {
     a.download = saveFileName;
     document.body.appendChild(a); a.click();
     setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+    // 출력 기록(10-10 pdflog) — 파일을 내려보낸 뒤 Logging_data 에 남긴다(Excel 내보내기 · 관리자 탭과 같은 logAction).
+    // logAction 은 기다리지 않는 비차단 호출이고 안에서 오류를 삼킨다 — 기록이 실패 · 지연돼도 PDF 는 그대로 나간다.
+    try { logAction((_pdfCtx && _pdfCtx.prefix === 'RR' ? 'Repair Report' : 'Mobility Car'), 'PDF 출력', { 신청: _pdfCtx.title || '', id: _pdfCtx.id || '', 상태: _pdfCtx.status || '', 종류: '결재내용 통합 PDF', 파일: saveFileName, 페이지: mainDoc.getPageCount() }); } catch (le) { console.warn('[Log] PDF 출력 기록 생략:', le && le.message); }
 
   } catch(e) {
+    try { logAction((_pdfCtx && _pdfCtx.prefix === 'RR' ? 'Repair Report' : 'Mobility Car'), 'PDF 출력 실패', { 신청: (_pdfCtx && _pdfCtx.title) || '', id: (_pdfCtx && _pdfCtx.id) || '', 상태: (_pdfCtx && _pdfCtx.status) || '', 종류: '결재내용 통합 PDF', 오류: String((e && e.message) || e || '').slice(0, 200) }); } catch (le) { console.warn('[Log] PDF 출력 실패 기록 생략:', le && le.message); }
     alert('PDF 생성 오류: ' + e.message);
     console.error(e);
   } finally {
@@ -2735,7 +2739,7 @@ async function rrShowDetail(id){
       apiAll('/sites/'+siteId+'/lists/'+RR_APR+'/items?$expand=fields&$top=500&$filter=fields/RequestID eq '+parseInt(id)),
     ]);
     const f=r.fields;
-    _pdfCtx = { prefix:'RR', label:'STK Repair Report', id, email:f.RequesterEmail||'' }; showPdfBtn(true);
+    _pdfCtx = { prefix:'RR', label:'STK Repair Report', id, email:f.RequesterEmail||'', title:f.Title||'', status:f.Status||'' }; showPdfBtn(true);
     const apprList=apprData.value.sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
     const sc={'대기':'#7d5700','승인':'#107c10','반려':'#a4262c','대기(잠김)':'#605e5c','승인완료':'#107c10'};
     const sec=t=>`<div style="margin:14px 0 8px;font-size:13px;font-weight:700;color:#1F4E79;padding:5px 10px;background:#EFF6FF;border-left:3px solid #1F4E79;border-radius:3px">${t}</div>`;
