@@ -1315,12 +1315,37 @@ function logAction(systemName, action, detail) {
         timestampKST: `${dateStr} ${p(now.getUTCHours())}:${p(now.getUTCMinutes())}:${p(now.getUTCSeconds())}`,
         user: rawUser, system: systemName, action, detail: detail || {}
       });
-      await fetch(GRAPH + '/drives/' + driveId + '/root:' + path + ':/content', {
+      const _lr = await fetch(GRAPH + '/drives/' + driveId + '/root:' + path + ':/content', {
         method: 'PUT', headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body
       });
+      // 저장이 거부돼도(403 · 429 · 5xx) 흔적이 없던 것 — APS(10-10)처럼 콘솔에 경고만 남긴다(10-15). 원 기능엔 영향 없음
+      if (_lr && !_lr.ok) console.warn('[Log] 기록 실패(무시됨, 원 기능엔 영향 없음): HTTP ' + _lr.status + ' —', systemName, action);
     } catch(e) { console.warn('[Log] 기록 실패(무시됨):', e.message); }
   })();
 }
+/* ══ 데이터 변경 기록(10-15) ══
+   상신 · 결재 승인 · 반려 · 철회 · 관리자 데이터 변경을 위 logAction 으로 Logging_data 에 남긴다.
+   action 이름 · detail 모양은 APS 통합 결재함(Logging_data/APS 「결재 승인」 · 「결재 반려」)에 맞춘다 —
+   신청번호 · 제목 · 결과 · 차수 · 결재자 · 처리자 · 대리 · 역할 · 의견 글자 수(의견 원문 · 금액 · 계좌 · 연락처 같은 개인정보는 넣지 않는다).
+   IT 계정 제외 규칙(10-01, IT Manager · IT system service)은 logAction 안에서 그대로 적용된다(감사 예외를 두지 않는다 — 10-15 결정).
+   실제 저장(Graph 쓰기)이 끝난 뒤에만 부르고 기다리지 않는다. detail 을 만들다 오류가 나도 원 기능으로 번지지 않게 감싼다. */
+function logChange(systemName, action, mk) {
+  try { logAction(systemName, action, typeof mk === 'function' ? mk() : (mk || {})); }
+  catch (e) { console.warn('[Log] 기록 생략(원 기능엔 영향 없음):', action, e && e.message); }
+}
+function logAprDetail(f, extra) {   // 결재행 fields(처리 전 값) → APS 와 같은 차수 · 결재자 · 처리자 · 대리 · 역할
+  f = f || {};
+  const orig = String(f.ApproverEmail || '');
+  let dg = null; try { dg = (typeof aacDelegatorOf === 'function') ? aacDelegatorOf(orig) : null; } catch (e) {}
+  return Object.assign({
+    차수: f.ApprovalOrder == null ? '' : f.ApprovalOrder,
+    결재자: orig,
+    처리자: String((typeof user !== 'undefined' && user && (user.email || user.username)) || ''),
+    대리: dg ? '예 — ' + (f.ApproverName || dg.name || orig) + ' 님 대신' : '',
+    역할: String(f.ApproverRole || '')
+  }, extra || {});
+}
+function logErrText(e) { return String((e && e.message) || e || '').slice(0, 200); }
 async function api(path,method='GET',body=null,_retry=0){
   const t=await token();
   const opts={method,headers:{Authorization:'Bearer '+t,'Content-Type':'application/json',Prefer:'HonorNonIndexedQueriesWarningMayFailRandomly'}};
@@ -1858,6 +1883,7 @@ async function submitForm(){
       }});
       if(_ar&&_ar.id) _sub.apr.push(_ar.id);
     }
+    logChange('Mobility Car', '상신', () => ({ 신청번호: reqId, 제목: 'MC-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId, 결재단계: _sub.apr.length, 첨부: allFiles.length }));   // 10-15 — 운전자 · 차량번호는 넣지 않는다
     showAlert('신청이 완료되었습니다.', 'MC-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId);
     resetForm(); switchTab('list');
   }catch(e){await _submitAbort('MC',_sub,e);}
@@ -1872,7 +1898,7 @@ async function submitForm(){
 async function _submitAbort(kind, sub, err){
   const msg=(err&&err.message)||String(err||'');
   const reqId=sub&&sub.reqId;
-  if(!reqId){showAlert('오류가 발생했습니다.',msg,'⚠️');return;}
+  if(!reqId){logChange(kind==='RR'?'Repair Report':'Mobility Car','상신 실패',()=>({오류:logErrText(err)}));showAlert('오류가 발생했습니다.',msg,'⚠️');return;}   // 신청을 만들기 전 실패(10-15) — 만든 뒤 실패는 아래 「상신 중단」
   const reqList=kind==='RR'?RR_REQ:LIST_REQ, aprList=kind==='RR'?RR_APR:LIST_APR;
   let cleaned=true;
   try{
@@ -2083,12 +2109,16 @@ async function exportMCAdminExcel(){
     }
 
     if(items.length===0){loading(false);alert('내보낼 데이터가 없습니다.');return;}
-    logAction(adminType==='RR'?'Repair Report':'Mobility Car', 'Excel 내보내기', { 건수: items.length, 필터: { 상태: status||'전체', 부서구분: dept||'전체' } });
+    // 출력 기록은 파일을 만든 뒤로 옮겼다(10-15) — 예전에는 만들기 전에 「성공」 으로 남아 실패해도 흔적이 없었다
     const ws=XLSX.utils.aoa_to_sheet(rows);
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,adminType==='RR'?'Repair Report':'Mobility Car');
     XLSX.writeFile(wb,'MC_Admin_'+adminType+'_'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'.xlsx');
-  }catch(e){alert('Excel 생성 실패: '+e.message);}
+    logChange(adminType==='RR'?'Repair Report':'Mobility Car', 'Excel 내보내기', () => ({ 건수: items.length, 필터: { 상태: status||'전체', 부서구분: dept||'전체' } }));
+  }catch(e){
+    logChange(adminType==='RR'?'Repair Report':'Mobility Car', 'Excel 내보내기 실패', () => ({ 오류: logErrText(e) }));
+    alert('Excel 생성 실패: '+e.message);
+  }
   finally{loading(false);}
 }
 
@@ -2166,13 +2196,20 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
   // type을 파라미터로 직접 받아서 처리 (_pendingApproval null 문제 해결)
   const aprList=type==='RR'?RR_APR:LIST_APR;
   const reqList=type==='RR'?RR_REQ:LIST_REQ;
+  // 결재 처리 기록(10-15) — APS 통합 결재함과 같은 「결재 승인」 · 「결재 반려」. 결재행을 쓴 뒤에만, 쓰기 전 오류는 「…실패」
+  const _lgAct=action==='반려'?'결재 반려':'결재 승인';
+  let _lgF=null,_lgW=false,_lgDone=false;
+  const _lg=(what,res,ex)=>{_lgDone=true;logChange(type==='RR'?'Repair Report':'Mobility Car',what,()=>Object.assign({신청번호:Number(reqId),제목:String((_lgF&&_lgF.Title)||'').replace(/-\d+$/,''),결과:res},logAprDetail(_lgF,{의견글자수:String(comment||'').length,결재행:apprId}),ex||{}));};
   loading(true);
   try{
     const _cur=await api('/sites/'+siteId+'/lists/'+aprList+'/items/'+apprId+'?$expand=fields');
     if(_cur.fields.Status!=='대기'){showAlert('이미 처리된 결재 항목입니다.','다른 창에서 처리되었거나 이미 완료된 항목입니다.','⚠️');loadApprovalQueue();return;}
+    _lgF=_cur.fields;
     await api('/sites/'+siteId+'/lists/'+aprList+'/items/'+apprId,'PATCH',{fields:aacPatchWith({Status:action==='승인'?'승인':action,ApprovalDate:new Date().toISOString(),Comment:comment}, _cur.fields)});
+    _lgW=true;
     if(action==='반려'){
       await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'반려'}});
+      _lg(_lgAct,'반려 — 신청 반려');
     } else {
       // 조회 조건에서 Status 를 뺐다(센티넬). 예전에는
       //   'RequestID eq N and Status eq 대기(잠김)'
@@ -2185,6 +2222,7 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
       const _rows=await aprRowsRetry('/sites/'+siteId+'/lists/'+aprList+"/items?$expand=fields&$top=50&$filter=fields/RequestID eq "+parseInt(reqId));
       if(!_rows.length){
         console.error('[MC] 결재 행 조회 결과가 비어 있음 — 승인완료 전환 중단. RequestID:', reqId);
+        _lg(_lgAct,'승인 기록 · 다음 단계로 넘기지 못함(결재 행 조회 0건)');
         showAlert('승인은 기록되었으나 다음 단계로 넘기지 못했습니다.',
           '잠시 후 결재함에서 상태를 다시 확인해 주세요. 계속 같은 증상이면 IT팀(stk_it@hyosung.com)에 알려주세요.' + (aprRowsRetry.lastError ? '\n(원인: ' + aprRowsRetry.lastError + ')' : ''),'⚠️');
         closeModal(); loadApprovalQueue();
@@ -2194,11 +2232,18 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
                       .sort((a,b)=>a.fields.ApprovalOrder-b.fields.ApprovalOrder);
       if(next.length) await api('/sites/'+siteId+'/lists/'+aprList+'/items/'+next[0].id,'PATCH',{fields:{Status:'대기'}});
       else await api('/sites/'+siteId+'/lists/'+reqList+'/items/'+reqId,'PATCH',{fields:{Status:'승인완료'}});
+      _lg(_lgAct,next.length?'승인 — '+(next[0].fields.ApprovalOrder??'')+'차 결재자에게 넘김':'승인 — 최종 승인(신청 승인완료)');
     }
     closeModal();
     showAlert(action+' 처리되었습니다.','',action==='반려'?'❌':'✅');
     loadApprovalQueue();
-  }catch(e){showAlert('오류가 발생했습니다.',e.message,'⚠️');}
+  }catch(e){
+    if(!_lgDone){
+      if(_lgW)_lg(_lgAct,'결재행은 기록됨 · 이후 단계 오류 — '+logErrText(e));   // APS 와 같은 문구
+      else _lg(_lgAct+' 실패','처리 안 함',{오류:logErrText(e)});
+    }
+    showAlert('오류가 발생했습니다.',e.message,'⚠️');
+  }
   finally{loading(false);}
 }
 
@@ -2990,6 +3035,7 @@ async function rrSubmitForm(){
       }});
       if(_ar&&_ar.id) _sub.apr.push(_ar.id);
     }
+    logChange('Repair Report', '상신', () => ({ 신청번호: reqId, 제목: 'RR-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId, 결재단계: _sub.apr.length, 첨부: allFiles.length }));   // 10-15 — 차량번호 · 사고 내용은 넣지 않는다
     showAlert('Repair Report가 제출되었습니다.', 'RR-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId);
     rrResetForm();
     switchTab('list');
@@ -3095,6 +3141,7 @@ async function withdrawRequest(e, reqId, aprList, reqList) {
     else alert('신청이 철회되었습니다.');
     loadMyList();
   } catch(err) {
+    logChange(reqList===RR_REQ?'Repair Report':'Mobility Car', '철회 실패', () => ({ RequestID: reqId, 오류: logErrText(err) }));   // 10-15 — 성공 기록(「철회」)과 같은 키
     alert('오류: ' + err.message);
   }
 }
