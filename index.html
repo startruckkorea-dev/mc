@@ -963,7 +963,7 @@ function escHtml(s){
 /* ── 대리 처리 표기 (AAC 연동) ────────────────────────────────────────
    AAC(결재 대리 지정)가 대리인이 처리한 결재행의 ApproverRole 뒤에
    '· 대리(이름 <메일>)' 를 덧붙인다. 그 꼬리를 그대로 화면에 뿌리면
-   '1차결재자 · 대리(Gildong Hong <hong.gildong@hyosung.com>)' 처럼 날값이 노출된다.
+   '1차결재자 · 대리(Gildong Hong <user@example.com>)' 처럼 날값이 노출된다.
    본래 역할만 남기고, 대리였다는 사실은 알약으로 따로 보여준다.
    IT-Ticket(1877행 부근)·Goodwill-Approval·aps 와 같은 표기·같은 색이다.
    대리가 아니면 aacRolePill 이 빈 문자열을 돌려주므로 호출부에 조건이 필요 없다. */
@@ -975,7 +975,7 @@ function _aacRoleParse(role){
   if(!m) return null;
   const im = m[2].match(/^([\s\S]*?)\s*<([^>]+)>\s*$/);
   const nm = (im ? im[1] : m[2]).trim(), em = im ? im[2].trim() : '';
-  // 이름이 없으면 메일을 이름 자리에 쓴다 — 'on behalf of  · a@x.com' 처럼 비지 않게
+  // 이름이 없으면 메일을 이름 자리에 쓴다 — 'on behalf of  · a@example.com' 처럼 비지 않게
   return { base: m[1].trim(), name: nm || em, email: nm ? em : '' };
 }
 function aacRoleBase(role){
@@ -1417,6 +1417,33 @@ async function loadSystemConfig() {
     return null;
   }
 }
+/* IT 문의 메일(10-17) — 코드에 메일 주소를 두지 않는다. system_config_final.xlsx 의 MC_IT_CONTACT(C열) → 없으면 CONTACT_EMAIL 순으로 채우고,
+   설정을 못 읽었으면(로그인 전 · 읽기 실패) 메일 없이 「IT팀」 만 보인다. 형식이 맞는 메일만 받으므로 HTML 에 그대로 넣어도 안전하다.
+   data-it-contact 가 붙은 화면 칸은 설정을 읽은 뒤 메일 링크로 바뀐다. */
+var IT_CONTACT_KEY = 'MC_IT_CONTACT', __itMail = '';
+function itTeam(label) { label = label || 'IT팀'; return __itMail ? label + '(' + __itMail + ')' : label; }
+function itApplyDom() {
+  try {
+    document.querySelectorAll('[data-it-contact]').forEach(function (el) {
+      el.textContent = '';
+      if (!__itMail) { el.textContent = el.getAttribute('data-it-contact') || 'IT팀'; return; }
+      var a = document.createElement('a'); a.href = 'mailto:' + __itMail; a.textContent = __itMail;
+      a.style.color = '#0078d4'; a.style.textDecoration = 'none'; el.appendChild(a);
+    });
+  } catch (e) {}
+}
+function itSetFromCfg(cfg) {
+  try {
+    if (!cfg || typeof cfg !== 'object') return;
+    var keys = Object.keys(cfg);
+    var pick = function (k) { var kk = keys.find(function (x) { return String(x).trim().toUpperCase() === k.toUpperCase(); }); return kk && cfg[kk] ? String(cfg[kk].email || '').trim().toLowerCase() : ''; };
+    var ok = function (v) { return /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(v); };
+    var mail = [pick(IT_CONTACT_KEY), pick('CONTACT_EMAIL')].find(ok);
+    if (mail) __itMail = mail;
+    itApplyDom();
+  } catch (e) {}
+}
+loadSystemConfig = (function (orig) { return async function () { var c = await orig.apply(this, arguments); itSetFromCfg(c || (typeof _sysConfig !== 'undefined' ? _sysConfig : null)); return c; }; })(loadSystemConfig);
 function cfgVal(cfg, key, defaultObj) {
   if (!cfg || !cfg[key]) return defaultObj;
   const v = cfg[key];
@@ -1817,7 +1844,7 @@ async function submitForm(){
   // 자동 지정 결재자(CFO · 관리자)는 설정 파일에서 온다(05-03 2cfc2ac 하드코딩 제거 후 기본값이 빈 값). 설정을 못 읽으면
   // 메일이 빈 결재행이 생겨 누구의 결재함에도 안 뜨고 건이 멈춘다 — 하나라도 비면 상신을 막는다(10-10 · FA 09-30 과 같은 규칙 · 같은 문구).
   const _autoMissing=[['1차 CFO(MC_CFO)',A2],['2차 관리자(MC_ADMIN_APPROVER)',A3]].filter(x=>!String(x[1].email||'').trim()).map(x=>x[0]);
-  if(_autoMissing.length){alert('자동 지정 결재자 설정을 읽지 못했습니다: '+_autoMissing.join(', ')+'\n\n새로고침 후 다시 시도해 주세요. 계속되면 system_config_final.xlsx 의 해당 KEY 를 확인하거나 IT팀(stk_it@hyosung.com)에 알려 주세요.');return;}
+  if(_autoMissing.length){alert('자동 지정 결재자 설정을 읽지 못했습니다: '+_autoMissing.join(', ')+'\n\n새로고침 후 다시 시도해 주세요. 계속되면 system_config_final.xlsx 의 해당 KEY 를 확인하거나 '+itTeam('IT팀')+'에 알려 주세요.');return;}
 
   // 파일 용량 체크
   const fileIds=['att1','att2','att3','att4','att5'];
@@ -1923,7 +1950,7 @@ async function _submitAbort(kind, sub, err){
   const tag=kind+'-'+new Date(new Date().getTime()+9*3600*1000).toISOString().slice(0,10)+'_ID-'+reqId;
   showAlert('상신을 완료하지 못했습니다.', cleaned
     ? tag+' 건은 철회 처리했습니다. 입력 내용은 그대로 있으니 다시 상신해 주세요.\n(원인: '+msg+')'
-    : tag+' 건을 정리하지 못했습니다. IT팀(stk_it@hyosung.com)에 신청 번호를 알려 주세요.\n(원인: '+msg+')','⚠️');
+    : tag+' 건을 정리하지 못했습니다. '+itTeam('IT팀')+'에 신청 번호를 알려 주세요.\n(원인: '+msg+')','⚠️');
 }
 
 function resetForm(){
@@ -2238,7 +2265,7 @@ async function processApproval(apprId,action,reqId,comment='',type='MC'){
         console.error('[MC] 결재 행 조회 결과가 비어 있음 — 승인완료 전환 중단. RequestID:', reqId);
         _lg(_lgAct,'승인 기록 · 다음 단계로 넘기지 못함(결재 행 조회 0건)');
         showAlert('승인은 기록되었으나 다음 단계로 넘기지 못했습니다.',
-          '잠시 후 결재함에서 상태를 다시 확인해 주세요. 계속 같은 증상이면 IT팀(stk_it@hyosung.com)에 알려주세요.' + (aprRowsRetry.lastError ? '\n(원인: ' + aprRowsRetry.lastError + ')' : ''),'⚠️');
+          '잠시 후 결재함에서 상태를 다시 확인해 주세요. 계속 같은 증상이면 '+itTeam('IT팀')+'에 알려주세요.' + (aprRowsRetry.lastError ? '\n(원인: ' + aprRowsRetry.lastError + ')' : ''),'⚠️');
         closeModal(); loadApprovalQueue();
         return;
       }
@@ -2942,10 +2969,10 @@ function applyFlexApprovers(){
       if(!note){ note=document.createElement('div'); note.className='flex-note'; title ? title.insertAdjacentElement('afterend', note) : block.insertBefore(note, block.firstChild); }
       const what = s.role==='tl' ? '팀장(Boss)' : '부서장(Boss of Boss)';
       note.textContent = nodata
-        ? '⚠ 직원 명부(employee_search)를 읽지 못해 결재자를 직접 선택합니다 — 새로고침 후에도 같으면 IT팀(stk_it@hyosung.com)에 알려주세요.'
+        ? '⚠ 직원 명부(employee_search)를 읽지 못해 결재자를 직접 선택합니다 — 새로고침 후에도 같으면 '+itTeam('IT팀')+'에 알려주세요.'
         : r.rec
-        ? '⚠ Flex 명부(employee_search)에서 '+what+' 「'+((s.role==='tl'?r.rec.boss:(r.rec.boss2||r.rec.boss))||'(빈칸)')+'」 을(를) 찾지 못해 직접 선택합니다 — IT팀(stk_it@hyosung.com)에 알려주세요.'
-        : '⚠ 신청자 계정이 Flex 명부(employee_search)에 없어 결재자를 직접 선택합니다 — IT팀(stk_it@hyosung.com)에 알려주세요.';
+        ? '⚠ Flex 명부(employee_search)에서 '+what+' 「'+((s.role==='tl'?r.rec.boss:(r.rec.boss2||r.rec.boss))||'(빈칸)')+'」 을(를) 찾지 못해 직접 선택합니다 — '+itTeam('IT팀')+'에 알려주세요.'
+        : '⚠ 신청자 계정이 Flex 명부(employee_search)에 없어 결재자를 직접 선택합니다 — '+itTeam('IT팀')+'에 알려주세요.';
       why.push(s.id+': '+(r.rec ? (s.role==='tl' ? 'Boss 못 찾음('+(r.rec.boss||'')+')' : 'Boss of Boss 못 찾음('+(r.rec.boss2||'')+'/'+(r.rec.boss||'')+')') : '명부에 없음'));
     }
   });
@@ -2975,7 +3002,7 @@ async function rrSubmitForm(){
   if(!a1Email){alert('1차 결재자(Line Manager)를 선택해주세요.');return;}
   // 2 · 3차(CFO · 관리자)는 설정 파일에서 온다 — 하나라도 비면 주인 없는 결재행이 생겨 건이 멈추므로 상신을 막는다(10-10 · FA 09-30 과 같은 규칙).
   const _autoMissing=[['2차 CFO(MC_CFO)',RR_A2],['3차 관리자(MC_ADMIN_APPROVER)',RR_A3]].filter(x=>!String(x[1].email||'').trim()).map(x=>x[0]);
-  if(_autoMissing.length){alert('자동 지정 결재자 설정을 읽지 못했습니다: '+_autoMissing.join(', ')+'\n\n새로고침 후 다시 시도해 주세요. 계속되면 system_config_final.xlsx 의 해당 KEY 를 확인하거나 IT팀(stk_it@hyosung.com)에 알려 주세요.');return;}
+  if(_autoMissing.length){alert('자동 지정 결재자 설정을 읽지 못했습니다: '+_autoMissing.join(', ')+'\n\n새로고침 후 다시 시도해 주세요. 계속되면 system_config_final.xlsx 의 해당 KEY 를 확인하거나 '+itTeam('IT팀')+'에 알려 주세요.');return;}
 
   const fileIds=['rr-att1','rr-att2','rr-att3','rr-att4','rr-att5'];
   let totalMB=0;
