@@ -1551,15 +1551,24 @@ function cfgVal(cfg, key, defaultObj) {
   const v = cfg[key];
   return { ...defaultObj, name: v.name || defaultObj.name, email: v.email || defaultObj.email };
 }
+/* 10-23: 접두어 뒤가 숫자인 키(PREFIX1 · PREFIX2 …)를 번호순으로 모두 — 대소문자 그대로(기존 비교와 같음) */
+function _cfgNumKeys(cfg, prefix) {
+  return Object.keys(cfg || {}).filter(x => x.startsWith(prefix) && /^\d+$/.test(x.slice(prefix.length)))
+    .sort((a, b) => Number(a.slice(prefix.length)) - Number(b.slice(prefix.length)));
+}
 function cfgEmails(cfg, keys) {
   // _ADMIN_N 패턴 키는 cfg에 존재하는 모든 번호까지 자동 포함
   const expanded = [];
   keys.forEach(k => {
+    // 10-23(E-09): 공통 관리자 'ADMIN_SP' 는 설정 파일의 ADMIN_SP_1 · ADMIN_SP_2 … 까지 함께 읽는다(APS 10-10 과 같은 기준).
+    // 설정 파일에는 번호 붙은 키만 있어, 예전에는 공통 관리자가 관리자 명단에서 빠졌다.
+    if (k === 'ADMIN_SP') { expanded.push(k); _cfgNumKeys(cfg, 'ADMIN_SP_').forEach(x => expanded.push(x)); return; }
     const match = k.match(/^(.+_ADMIN_)[0-9]+$/);
     if (match) {
       const prefix = match[1];
-      let n = 1;
-      while (cfg && cfg[prefix + n]) { expanded.push(prefix + n); n++; }
+      // 10-23(E-10): 번호가 중간에 비어도(_3 없이 _4) 뒤 번호까지 모두 읽는다 — 설정 파일에 있는 번호 전부, 번호순.
+      // 예전 방식(1 부터 이어지는 동안만)은 한 줄을 지우면 그 뒤 관리자가 조용히 빠졌다.
+      _cfgNumKeys(cfg, prefix).forEach(x => expanded.push(x));
     } else {
       expanded.push(k);
     }
