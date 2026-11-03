@@ -938,10 +938,10 @@ window.apsYear = (function () {
       <!-- 결재 라인 미리보기 · 결재자 블록 — ACC Voucher 와 같은 모양(09-30) -->
       <div class="appr-line-preview">
         <div class="appr-line-title">📋 결재 라인 (Repair Report 기준 자동 구성)</div>
-        <div class="appr-line-steps"><span class="line-step"><span class="line-step-badge">1차</span><span class="line-step-label">Line Manager (팀장)</span><span class="line-arrow">→</span></span><span class="line-step"><span class="line-step-badge fixed">2차</span><span class="line-step-label">CFO</span><span class="line-arrow">→</span></span><span class="line-step"><span class="line-step-badge fixed">3차</span><span class="line-step-label">GA Specialist</span></span></div>
+        <div class="appr-line-steps"><span class="line-step"><span class="line-step-badge">1차</span><span class="line-step-label">Team Leader (팀장)</span><span class="line-arrow">→</span></span><span class="line-step"><span class="line-step-badge fixed">2차</span><span class="line-step-label">CFO</span><span class="line-arrow">→</span></span><span class="line-step"><span class="line-step-badge fixed">3차</span><span class="line-step-label">GA Specialist</span></span></div>
       </div>
       <div class="appr-block appr-fixed appr-flex">
-        <div class="appr-block-title">1차 결재자 <span class="req-mark">*</span><span class="appr-tag flex">Flex 연동</span> <span class="hint">— Line Manager (팀장)</span></div>
+        <div class="appr-block-title">1차 결재자 <span class="req-mark">*</span><span class="appr-tag flex">Flex 연동</span> <span class="hint">— Team Leader (팀장)</span></div>
         <div class="appr-select-row" style="display:none">
           <select id="rr-a1-dept" onchange="onDeptChange('rr-a1')"><option value="">부서</option></select>
           <select id="rr-a1-team" onchange="onTeamChange('rr-a1')" disabled><option value="">팀</option></select>
@@ -1084,6 +1084,9 @@ function aacRoleBase(role){
   const p = _aacRoleParse(role);
   return p ? p.base : String(role == null ? '' : role);
 }
+/* 11-03 결재 역할 표기 — 1차 「Line Manager」 는 화면에서 「Team Leader」 로 보여 준다(ACC Voucher · FA · STK Contract 와 같은 표기).
+   저장값은 그대로 — 옛 건 · APS 결재함 · 내보내기 판정이 같은 값을 읽는다. */
+function tlRoleText(r){ return String(r == null ? '' : r).replace(/\bLine Manager\b/g, 'Team Leader'); }
 function aacRolePill(role, status){
   const p = _aacRoleParse(role);
   if(!p) return '';
@@ -2455,7 +2458,7 @@ async function showDetail(id){
 
     const apprHtml2=sec('결재 이력')+
       '<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden">'+
-      apprList.map(a=>{const af=a.fields;return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:13px">${(()=>{const _r=aacRoleBase(af.ApproverRole),_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+escHtml(_o)+'차</b> 결재자'+escHtml(_q)+aacRolePill(af.ApproverRole, af.Status);})()}</div><div style="font-size:12px;color:#605e5c;margin-top:2px">${escHtml(af.ApproverName||'')} · ${escHtml(af.ApproverEmail||'')}</div>${af.ApprovalDate?`<div style="font-size:11px;color:#a19f9d;margin-top:2px">${fmtDate(af.ApprovalDate)}</div>`:''}${af.Comment?`<div style="margin-top:4px;background:#fff;border:1px solid #edebe9;border-radius:4px;padding:4px 8px;font-size:12px;color:#605e5c">💬 ${safeText(af.Comment)}</div>`:''}</div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:12px;white-space:nowrap;margin-left:8px">${escHtml(af.Status||'')}</span></div>`;}).join('')+
+      apprList.map(a=>{const af=a.fields;return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:13px">${(()=>{const _r=tlRoleText(aacRoleBase(af.ApproverRole)),_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+escHtml(_o)+'차</b> 결재자'+escHtml(_q)+aacRolePill(af.ApproverRole, af.Status);})()}</div><div style="font-size:12px;color:#605e5c;margin-top:2px">${escHtml(af.ApproverName||'')} · ${escHtml(af.ApproverEmail||'')}</div>${af.ApprovalDate?`<div style="font-size:11px;color:#a19f9d;margin-top:2px">${fmtDate(af.ApprovalDate)}</div>`:''}${af.Comment?`<div style="margin-top:4px;background:#fff;border:1px solid #edebe9;border-radius:4px;padding:4px 8px;font-size:12px;color:#605e5c">💬 ${safeText(af.Comment)}</div>`:''}</div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:12px;white-space:nowrap;margin-left:8px">${escHtml(af.Status||'')}</span></div>`;}).join('')+
       '</div>';
 
     const myPending=apprList.find(a=>isMyAppr(a.fields.ApproverEmail)&&(a.fields.Status||'').trim()==='대기');
@@ -2884,7 +2887,7 @@ function openUniDetail(apprId){
   inner.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div style="font-weight:700;font-size:.95rem;color:#323130"><span class="sys-badge ${sys.color}" style="margin-right:6px">${sys.key}</span>신청번호 ${reqId}</div><button onclick="closeUniDetail()" style="background:none;border:1px solid #d2d0ce;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:.85rem;color:#605e5c">✕</button></div>`+
     `<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:12px"><tr><td style="color:#605e5c;width:110px;padding:5px 0;border-bottom:1px solid #f3f2f1">신청자</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1">${rf.RequesterEmail||'-'}</td></tr>${rows}<tr><td style="color:#605e5c;padding:5px 0;border-bottom:1px solid #f3f2f1">상태</td><td style="padding:5px 0;border-bottom:1px solid #f3f2f1"><span class="badge-${(function(s){var v=(s||'대기').trim();return v.indexOf('철회')===0?'철회':(v==='승인'?'승인완료':v);})(rf.Status)}">${rf.Status||'대기'}</span></td></tr><tr><td style="color:#605e5c;padding:5px 0">신청일</td><td style="padding:5px 0">${fmt(rf.RequestDate)}</td></tr></table>`+
     `<div style="font-size:.72rem;font-weight:600;color:#0078d4;background:#f0f6ff;border-left:3px solid #0078d4;padding:5px 10px;border-radius:4px;margin-bottom:8px">결재 현황</div>`+
-    `<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden;margin-bottom:14px">${apprList.map(af=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:.8rem">${(()=>{const _r=aacRoleBase(af.ApproverRole),_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+escHtml(_o)+'차</b> 결재자'+escHtml(_q)+aacRolePill(af.ApproverRole, af.Status);})()}</div><div style="font-size:.72rem;color:#605e5c">${escHtml(af.ApproverName||'')} · ${escHtml(af.ApproverEmail||'')}</div></div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:.75rem;white-space:nowrap">${escHtml(af.Status||'')}</span></div>`).join('')}</div>`+
+    `<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden;margin-bottom:14px">${apprList.map(af=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:.8rem">${(()=>{const _r=tlRoleText(aacRoleBase(af.ApproverRole)),_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+escHtml(_o)+'차</b> 결재자'+escHtml(_q)+aacRolePill(af.ApproverRole, af.Status);})()}</div><div style="font-size:.72rem;color:#605e5c">${escHtml(af.ApproverName||'')} · ${escHtml(af.ApproverEmail||'')}</div></div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:.75rem;white-space:nowrap">${escHtml(af.Status||'')}</span></div>`).join('')}</div>`+
     `<div style="display:flex;gap:10px;margin-bottom:10px"><button onclick="showConfirm(${apprId},'승인',${reqId});closeUniDetail();" class="btn-approve" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">✅ 승인</button><button onclick="showConfirm(${apprId},'반려',${reqId});closeUniDetail();" class="btn-reject" style="flex:1;border-radius:6px;padding:10px;font-size:.9rem;font-weight:700">❌ 반려</button></div>`+
     `<div style="text-align:right"><a href="${sys.url}" target="_blank" style="font-size:.72rem;color:#0078d4;text-decoration:none">${sys.name} 전체 보기 →</a></div>`;
   document.getElementById('uni-detail-box').style.display='flex';
@@ -2996,7 +2999,7 @@ async function rrShowDetail(id){
     }
 
     const apprHtml=sec('결재 이력')+'<div style="background:#f9f9f9;border-radius:6px;border:1px solid #edebe9;overflow:hidden">'+
-      apprList.map(a=>{const af=a.fields;return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:13px">${(()=>{const _r=aacRoleBase(af.ApproverRole),_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+escHtml(_o)+'차</b> 결재자'+escHtml(_q)+aacRolePill(af.ApproverRole, af.Status);})()}</div><div style="font-size:12px;color:#605e5c;margin-top:2px">${escHtml(af.ApproverName||'')} · ${escHtml(af.ApproverEmail||'')}</div>${af.ApprovalDate?`<div style="font-size:11px;color:#a19f9d;margin-top:2px">${fmtDate(af.ApprovalDate)}</div>`:''  }${af.Comment?`<div style="margin-top:4px;background:#fff;border:1px solid #edebe9;border-radius:4px;padding:4px 8px;font-size:12px;color:#605e5c">💬 ${safeText(af.Comment)}</div>`:''}</div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:12px">${escHtml(af.Status||'')}</span></div>`;}).join('')+
+      apprList.map(a=>{const af=a.fields;return`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;border-bottom:1px solid #edebe9"><div><div style="font-weight:600;font-size:13px">${(()=>{const _r=tlRoleText(aacRoleBase(af.ApproverRole)),_o=String(af.ApprovalOrder||'');const _n=_r.startsWith(_o+'차')?_r.slice(_o.length+1).trim():_r;const _p=_n.replace(/^결재자\s*/,'');const _q=_p.startsWith('(')?_p:(_p?'('+_p+')':'');return '<b>'+escHtml(_o)+'차</b> 결재자'+escHtml(_q)+aacRolePill(af.ApproverRole, af.Status);})()}</div><div style="font-size:12px;color:#605e5c;margin-top:2px">${escHtml(af.ApproverName||'')} · ${escHtml(af.ApproverEmail||'')}</div>${af.ApprovalDate?`<div style="font-size:11px;color:#a19f9d;margin-top:2px">${fmtDate(af.ApprovalDate)}</div>`:''  }${af.Comment?`<div style="margin-top:4px;background:#fff;border:1px solid #edebe9;border-radius:4px;padding:4px 8px;font-size:12px;color:#605e5c">💬 ${safeText(af.Comment)}</div>`:''}</div><span style="color:${sc[af.Status]||'#323130'};font-weight:700;font-size:12px">${escHtml(af.Status||'')}</span></div>`;}).join('')+
       '</div>';
 
     const myPending=apprList.find(a=>isMyAppr(a.fields.ApproverEmail)&&(a.fields.Status||'').trim()==='대기');
@@ -3110,7 +3113,7 @@ async function rrSubmitForm(){
   if(!accidentType){alert('Accident Type을 선택해주세요.');return;}
   if(!passengers){alert('Passenger(s) 정보를 입력해주세요.');return;}
   if(!location){alert('Location of Accident를 입력해주세요.');return;}
-  if(!a1Email){alert('1차 결재자(Line Manager)를 선택해주세요.');return;}
+  if(!a1Email){alert('1차 결재자(Team Leader)를 선택해주세요.');return;}
   // 2 · 3차(CFO · 관리자)는 설정 파일에서 온다 — 하나라도 비면 주인 없는 결재행이 생겨 건이 멈추므로 상신을 막는다(10-10 · FA 09-30 과 같은 규칙).
   const _autoMissing=[['2차 CFO(MC_CFO)',RR_A2],['3차 관리자(MC_ADMIN_APPROVER)',RR_A3]].filter(x=>!String(x[1].email||'').trim()).map(x=>x[0]);
   if(_autoMissing.length){alert('자동 지정 결재자 설정을 읽지 못했습니다: '+_autoMissing.join(', ')+'\n\n새로고침 후 다시 시도해 주세요. 계속되면 system_config_final.xlsx 의 해당 KEY 를 확인하거나 '+itTeam('IT팀')+'에 알려 주세요.');return;}
@@ -3174,7 +3177,7 @@ async function rrSubmitForm(){
     // 결재자 등록
     const a1Name=document.getElementById('rr-a1-name').value;
     const approvers=[
-      {name:a1Name,email:a1Email,role:'1차결재자(Line Manager)',order:1},
+      {name:a1Name,email:a1Email,role:'1차결재자(Line Manager)',order:1},   // 11-03: 저장값은 그대로 — 화면은 tlRoleText 로 Team Leader
       RR_A2,
       RR_A3
     ];
